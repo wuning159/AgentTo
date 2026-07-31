@@ -16,8 +16,10 @@ public class AuthWebConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // 管理端认证只拦截 /api/admin/** 和 /api/auth/**
+        // /api/v1/** 由 ClientApiKeyInterceptor 处理
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/api/**")
+                .addPathPatterns("/api/admin/**", "/api/auth/**")
                 .excludePathPatterns("/api/auth/login");
     }
 

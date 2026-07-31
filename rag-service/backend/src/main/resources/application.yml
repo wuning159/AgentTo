@@ -64,6 +64,9 @@ rag:
     target-chars: 500
     max-chars: 800
     overlap-chars: 80
+  client:
+    # pepper 用于 HMAC-SHA256 哈希 API Key，生产环境必须通过 RAG_CLIENT_KEY_PEPPER 环境变量设置
+    key-pepper: ${RAG_CLIENT_KEY_PEPPER:}
 
 logging:
   pattern:

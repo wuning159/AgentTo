@@ -13,6 +13,8 @@ spring:
 rag:
   auth:
     bootstrap-enabled: false
+  client:
+    key-pepper: test-pepper-for-unit-tests
   async:
     enabled: false
   storage:
