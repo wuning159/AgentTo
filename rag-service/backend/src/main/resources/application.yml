@@ -76,6 +76,11 @@ rag:
     verification-per-kb-limit: 2
     # 验证分数阈值，低于此分数的知识库不会被选中
     verification-threshold: 0.55
+  evidence:
+    # 候选证据的最低分数阈值
+    minimum-score: 0.55
+    # 最少合格证据数量
+    minimum-count: 2
 
 logging:
   pattern:
