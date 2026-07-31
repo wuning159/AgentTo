@@ -67,6 +67,15 @@ rag:
   client:
     # pepper 用于 HMAC-SHA256 哈希 API Key，生产环境必须通过 RAG_CLIENT_KEY_PEPPER 环境变量设置
     key-pepper: ${RAG_CLIENT_KEY_PEPPER:}
+  routing:
+    # 第一阶段画像召回上限
+    profile-limit: 10
+    # 第二阶段最终选中的知识库上限
+    selected-limit: 3
+    # 每个知识库的内容验证检索条数
+    verification-per-kb-limit: 2
+    # 验证分数阈值，低于此分数的知识库不会被选中
+    verification-threshold: 0.55
 
 logging:
   pattern:
