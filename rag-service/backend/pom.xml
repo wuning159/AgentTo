@@ -79,6 +79,11 @@
             <artifactId>spring-ai-client-chat</artifactId>
         </dependency>
         <dependency>
+            <!-- RAG 查询改写（RewriteQueryTransformer），Task 9 引入 -->
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-rag</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
