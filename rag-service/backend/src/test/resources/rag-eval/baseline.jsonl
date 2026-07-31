@@ -1,0 +1,30 @@
+{"id":"route-budget-001","clientAppId":10,"query":"预算怎么审批","expectedKbIds":[101,102],"expectedChunkIds":["finance-budget-approval-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-budget-002","clientAppId":10,"query":"单笔超过五十万的预算需要谁审批","expectedKbIds":[101],"expectedChunkIds":["finance-limit-approval-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-procurement-001","clientAppId":10,"query":"采购申请流程是什么","expectedKbIds":[103,101],"expectedChunkIds":["procure-flow-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-procurement-002","clientAppId":10,"query":"供应商准入有哪些要求","expectedKbIds":[103],"expectedChunkIds":["procure-vendor-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-hitl-001","clientAppId":10,"query":"HITL 是什么","expectedKbIds":[201],"expectedChunkIds":["ai-hitl-definition-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-raci-001","clientAppId":10,"query":"RACI 矩阵怎么用","expectedKbIds":[201],"expectedChunkIds":["ai-raci-matrix-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-contract-001","clientAppId":10,"query":"合同审批需要几步","expectedKbIds":[102],"expectedChunkIds":["contract-approval-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-attendance-001","clientAppId":10,"query":"请假超过三天怎么处理","expectedKbIds":[104],"expectedChunkIds":["hr-leave-3days-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-reimburse-001","clientAppId":10,"query":"报销单需要哪些附件","expectedKbIds":[104,101],"expectedChunkIds":["hr-reimburse-attach-1"],"expectedDecision":"ANSWERED"}
+{"id":"route-project-001","clientAppId":10,"query":"项目立项评审流程","expectedKbIds":[105,101],"expectedChunkIds":["pm-initiation-1"],"expectedDecision":"ANSWERED"}
+{"id":"noref-hobby-001","clientAppId":10,"query":"明天天气怎么样","expectedKbIds":[],"expectedChunkIds":[],"expectedDecision":"NO_RELEVANT_KNOWLEDGE_BASE"}
+{"id":"noref-food-001","clientAppId":10,"query":"推荐一家好吃的火锅店","expectedKbIds":[],"expectedChunkIds":[],"expectedDecision":"NO_RELEVANT_KNOWLEDGE_BASE"}
+{"id":"noref-news-001","clientAppId":10,"query":"最近有什么新闻","expectedKbIds":[],"expectedChunkIds":[],"expectedDecision":"NO_RELEVANT_KNOWLEDGE_BASE"}
+{"id":"noref-code-001","clientAppId":10,"query":"帮我写一段 Java 代码","expectedKbIds":[],"expectedChunkIds":[],"expectedDecision":"NO_RELEVANT_KNOWLEDGE_BASE"}
+{"id":"noref-sports-001","clientAppId":10,"query":"如何提高篮球投篮命中率","expectedKbIds":[],"expectedChunkIds":[],"expectedDecision":"NO_RELEVANT_KNOWLEDGE_BASE"}
+{"id":"insufficient-budget-001","clientAppId":10,"query":"预算调整的例外情形有哪些","expectedKbIds":[101],"expectedChunkIds":[],"expectedDecision":"INSUFFICIENT_EVIDENCE"}
+{"id":"insufficient-procure-001","clientAppId":10,"query":"采购退货的质保金比例","expectedKbIds":[103],"expectedChunkIds":[],"expectedDecision":"INSUFFICIENT_EVIDENCE"}
+{"id":"insufficient-hitl-001","clientAppId":10,"query":"HITL 与 RACI 冲突时的仲裁机制","expectedKbIds":[201],"expectedChunkIds":[],"expectedDecision":"INSUFFICIENT_EVIDENCE"}
+{"id":"insufficient-contract-001","clientAppId":10,"query":"涉外合同的仲裁地选择","expectedKbIds":[102],"expectedChunkIds":[],"expectedDecision":"INSUFFICIENT_EVIDENCE"}
+{"id":"insufficient-attendance-001","clientAppId":10,"query":"病假工资的医疗期计算","expectedKbIds":[104],"expectedChunkIds":[],"expectedDecision":"INSUFFICIENT_EVIDENCE"}
+{"id":"citation-budget-001","clientAppId":10,"query":"预算审批需要几天","expectedKbIds":[101],"expectedChunkIds":["finance-budget-approval-1"],"expectedDecision":"INVALID_CITATION"}
+{"id":"citation-procure-001","clientAppId":10,"query":"采购付款比例是多少","expectedKbIds":[103],"expectedChunkIds":["procure-payment-1"],"expectedDecision":"INVALID_CITATION"}
+{"id":"citation-hitl-001","clientAppId":10,"query":"人机回环的最低人工介入频次","expectedKbIds":[201],"expectedChunkIds":["ai-hitl-definition-1"],"expectedDecision":"INVALID_CITATION"}
+{"id":"citation-contract-001","clientAppId":10,"query":"合同用印规则","expectedKbIds":[102],"expectedChunkIds":["contract-seal-1"],"expectedDecision":"INVALID_CITATION"}
+{"id":"citation-reimburse-001","clientAppId":10,"query":"报销的额度上限","expectedKbIds":[104],"expectedChunkIds":["hr-reimburse-attach-1"],"expectedDecision":"INVALID_CITATION"}
+{"id":"rewrite-budget-001","clientAppId":10,"query":"预算咋批","expectedKbIds":[101,102],"expectedChunkIds":["finance-budget-approval-1"],"expectedDecision":"ANSWERED","expectsRewrite":true}
+{"id":"rewrite-procure-001","clientAppId":10,"query":"咋采购","expectedKbIds":[103],"expectedChunkIds":["procure-flow-1"],"expectedDecision":"ANSWERED","expectsRewrite":true}
+{"id":"rewrite-hitl-001","clientAppId":10,"query":"HITL 啥意思","expectedKbIds":[201],"expectedChunkIds":["ai-hitl-definition-1"],"expectedDecision":"ANSWERED","expectsRewrite":true}
+{"id":"rewrite-contract-001","clientAppId":10,"query":"合同咋签","expectedKbIds":[102],"expectedChunkIds":["contract-approval-1"],"expectedDecision":"ANSWERED","expectsRewrite":true}
+{"id":"rewrite-attendance-001","clientAppId":10,"query":"请假咋办","expectedKbIds":[104],"expectedChunkIds":["hr-leave-3days-1"],"expectedDecision":"ANSWERED","expectsRewrite":true}
