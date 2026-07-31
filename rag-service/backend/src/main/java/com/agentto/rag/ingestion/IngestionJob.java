@@ -28,7 +28,7 @@ public class IngestionJob {
     private int attemptNo;
     @Column(name = "error_code")
     private String errorCode;
-    @Column(name = "error_message")
+    @Column(name = "error_message", length = 1000)
     private String errorMessage;
     @Column(name = "started_at")
     private Instant startedAt;

@@ -22,6 +22,8 @@ public class RagChunkEntity {
     private Long documentId;
     @Column(name = "version_id", nullable = false)
     private Long versionId;
+    @Column(name = "knowledge_base_id", nullable = false)
+    private Long knowledgeBaseId;
     @Column(name = "ordinal_no", nullable = false)
     private int ordinalNo;
     private String title;
@@ -53,13 +55,14 @@ public class RagChunkEntity {
     protected RagChunkEntity() {
     }
 
-    public static RagChunkEntity create(String uid, Long documentId, Long versionId, int ordinal, String title,
+    public static RagChunkEntity create(String uid, Long documentId, Long versionId, Long knowledgeBaseId, int ordinal, String title,
             String content, String contentHash, Integer page, String section, String sheet, Integer rowStart,
             Integer rowEnd, String metadataJson, int dimensions) {
         RagChunkEntity entity = new RagChunkEntity();
         entity.chunkUid = uid;
         entity.documentId = documentId;
         entity.versionId = versionId;
+        entity.knowledgeBaseId = knowledgeBaseId;
         entity.ordinalNo = ordinal;
         entity.title = title;
         entity.content = content;

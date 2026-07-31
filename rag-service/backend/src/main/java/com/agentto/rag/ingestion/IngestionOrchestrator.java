@@ -115,7 +115,7 @@ public class IngestionOrchestrator {
             stageRepository.save(IngestionStage.success(jobId, currentStage, "向量生成完成", vectors.size(),
                     technicalJson(technicalDetails.embed(chunks, vectors, 16)), stageStarted));
 
-            List<RagChunkEntity> entities = createEntities(document.getId(), version.getId(), chunks, vectors);
+            List<RagChunkEntity> entities = createEntities(document.getId(), version.getId(), document.getKnowledgeBaseId(), chunks, vectors);
             chunkRepository.deleteByVersionId(version.getId());
             chunkRepository.saveAll(entities);
 
@@ -168,7 +168,7 @@ public class IngestionOrchestrator {
         return result;
     }
 
-    private List<RagChunkEntity> createEntities(Long documentId, Long versionId, List<RagChunk> chunks,
+    private List<RagChunkEntity> createEntities(Long documentId, Long versionId, Long knowledgeBaseId, List<RagChunk> chunks,
             List<float[]> vectors) {
         List<RagChunkEntity> result = new ArrayList<>(chunks.size());
         for (int i = 0; i < chunks.size(); i++) {
@@ -176,7 +176,7 @@ public class IngestionOrchestrator {
             Map<String, String> metadata = chunk.metadata();
             String hash = sha256(chunk.content());
             String uid = versionId + "-" + chunk.ordinal() + "-" + hash.substring(0, 12);
-            result.add(RagChunkEntity.create(uid, documentId, versionId, chunk.ordinal(),
+            result.add(RagChunkEntity.create(uid, documentId, versionId, knowledgeBaseId, chunk.ordinal(),
                     metadata.getOrDefault("section", ""), chunk.content(), hash,
                     integer(metadata.get("page")), metadata.get("section"), metadata.get("sheet"),
                     integer(metadata.get("rowStart")), integer(metadata.get("rowEnd")), json(metadata),

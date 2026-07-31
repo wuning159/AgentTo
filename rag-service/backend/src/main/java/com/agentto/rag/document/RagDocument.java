@@ -28,6 +28,9 @@ public class RagDocument {
     @Column(nullable = false)
     private String status;
 
+    @Column(name = "knowledge_base_id", nullable = false)
+    private Long knowledgeBaseId;
+
     @Column(name = "current_version_id")
     private Long currentVersionId;
 
@@ -43,9 +46,10 @@ public class RagDocument {
     protected RagDocument() {
     }
 
-    private RagDocument(String name, String category, Long createdBy) {
+    private RagDocument(String name, String category, Long knowledgeBaseId, Long createdBy) {
         this.name = name;
         this.category = category;
+        this.knowledgeBaseId = knowledgeBaseId;
         this.sourceType = "MANUAL";
         this.status = "PROCESSING";
         this.createdBy = createdBy;
@@ -53,8 +57,8 @@ public class RagDocument {
         this.updatedAt = this.createdAt;
     }
 
-    public static RagDocument manual(String name, String category, Long createdBy) {
-        return new RagDocument(name, category, createdBy);
+    public static RagDocument manual(String name, String category, Long knowledgeBaseId, Long createdBy) {
+        return new RagDocument(name, category, knowledgeBaseId, createdBy);
     }
 
     public void setCurrentVersion(Long versionId) {
@@ -77,6 +81,7 @@ public class RagDocument {
     public String getCategory() { return category; }
     public String getSourceType() { return sourceType; }
     public String getStatus() { return status; }
+    public Long getKnowledgeBaseId() { return knowledgeBaseId; }
     public Long getCurrentVersionId() { return currentVersionId; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

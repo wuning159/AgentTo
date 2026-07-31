@@ -53,7 +53,8 @@ public class DocumentService {
         String objectKey = objectKey(filename);
         StoredObject stored = storage.put(objectKey, bytes, file.getContentType());
 
-        RagDocument document = documentRepository.save(RagDocument.manual(filename, normalize(category), adminId));
+        // 暂用默认知识库 ID（V4 迁移插入的 legacy-default-kb），Task 5 将正式接入
+        RagDocument document = documentRepository.save(RagDocument.manual(filename, normalize(category), 1L, adminId));
         RagDocumentVersion version = versionRepository.save(RagDocumentVersion.first(document.getId(), filename,
                 file.getContentType(), bytes.length, sha256, stored.bucket(), stored.objectKey(), adminId));
         document.setCurrentVersion(version.getId());
