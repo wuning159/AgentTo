@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">平台构成图</title>
+  <desc id="desc">主导部门、审查部门、秘书组和审批人通过企业微信进入文件协同与工作流，工作流连接部门 Agent、知识与上下文中心、文件与流程数据以及权限和审计。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .box { fill: #f8fafc; stroke: #64748b; stroke-width: 2; }
+      .main { fill: #eaf2ff; stroke: #2563eb; stroke-width: 2.5; }
+      .support { fill: #eefbf3; stroke: #16a34a; stroke-width: 2; }
+      .line { fill: none; stroke: #64748b; stroke-width: 2.2; marker-end: url(#arrow); }
+      .title { font: 600 22px "Microsoft YaHei", "Segoe UI", sans-serif; fill: #172033; text-anchor: middle; }
+      .text { font: 18px "Microsoft YaHei", "Segoe UI", sans-serif; fill: #334155; text-anchor: middle; }
+      .caption { font: 16px "Microsoft YaHei", "Segoe UI", sans-serif; fill: #475569; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect class="box" x="180" y="30" width="840" height="70" rx="14"/>
+  <text class="title" x="600" y="73">主导部门、审查部门、秘书组、最终审批人</text>
+
+  <path class="line" d="M600 100 L600 140"/>
+  <rect class="box" x="400" y="140" width="400" height="70" rx="14"/>
+  <text class="title" x="600" y="183">企业微信通知与平台入口</text>
+
+  <path class="line" d="M600 210 L600 250"/>
+  <rect class="main" x="350" y="250" width="500" height="82" rx="16"/>
+  <text class="title" x="600" y="285">文件协同与工作流</text>
+  <text class="caption" x="600" y="314">节点、人员、权限、状态、退回、版本和审批</text>
+
+  <path d="M600 332 L600 370 M155 370 L1045 370" fill="none" stroke="#64748b" stroke-width="2.2"/>
+  <path class="line" d="M155 370 L155 405"/>
+  <path class="line" d="M455 370 L455 405"/>
+  <path class="line" d="M745 370 L745 405"/>
+  <path class="line" d="M1045 370 L1045 405"/>
+
+  <rect class="support" x="35" y="405" width="240" height="105" rx="14"/>
+  <text class="title" x="155" y="446">部门 Agent</text>
+  <text class="caption" x="155" y="476">辅助检查、查找依据</text>
+  <text class="caption" x="155" y="499">形成意见草稿</text>
+
+  <rect class="support" x="325" y="405" width="260" height="105" rx="14"/>
+  <text class="title" x="455" y="446">知识与上下文中心</text>
+  <text class="caption" x="455" y="476">当前任务、过程记忆</text>
+  <text class="caption" x="455" y="499">企业知识与历史经验</text>
+
+  <rect class="box" x="625" y="405" width="240" height="105" rx="14"/>
+  <text class="title" x="745" y="446">正式业务数据</text>
+  <text class="caption" x="745" y="476">文件、版本、意见</text>
+  <text class="caption" x="745" y="499">流程状态和审批结果</text>
+
+  <rect class="box" x="915" y="405" width="260" height="105" rx="14"/>
+  <text class="title" x="1045" y="446">权限与审计</text>
+  <text class="caption" x="1045" y="476">访问控制、操作记录</text>
+  <text class="caption" x="1045" y="499">全过程可追溯</text>
+
+  <path class="line" d="M275 457 L325 457"/>
+</svg>

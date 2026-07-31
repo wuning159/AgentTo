@@ -1,0 +1,38 @@
+# Build artifacts
+rag-service/backend/target/
+rag-service/frontend/node_modules/
+rag-service/frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment and secrets
+*.env.local
+.env
+deploy/.env
+
+# Logs
+*.log
+rag-service/logs/
+
+# Temp and cache
+.m2/
+tmp/
+.superpowers/
+
+# OS files
+.DS_Store
+Thumbs.db
+.m2/
+tmp/
+backend/target/
+backend/.idea/
+backend/.vscode/
+*.log
+.env
+deploy/.env
+deploy/data/
+*.env.local
+.superpowers/

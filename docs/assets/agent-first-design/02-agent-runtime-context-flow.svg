@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200">
+  <defs>
+    <style>
+      .title{font:700 42px 'Microsoft YaHei','PingFang SC',Arial;fill:#173d32}.subtitle{font:22px 'Microsoft YaHei','PingFang SC',Arial;fill:#6b7c74}
+      .h1{font:700 27px 'Microsoft YaHei','PingFang SC',Arial;fill:#173d32}.h2{font:700 21px 'Microsoft YaHei','PingFang SC',Arial;fill:#244f3d}
+      .body{font:18px 'Microsoft YaHei','PingFang SC',Arial;fill:#52685e}.small{font:16px 'Microsoft YaHei','PingFang SC',Arial;fill:#6b7c74}
+      .num{font:700 20px 'Microsoft YaHei','PingFang SC',Arial;fill:white}.arrow{stroke:#4b9d77;stroke-width:4;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#4b9d77"/></marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#214f3c" flood-opacity="0.10"/></filter>
+  </defs>
+
+  <rect width="1800" height="1200" fill="#f5f8f6"/>
+  <text x="60" y="68" class="title">一次 Agent 运行的数据流</text>
+  <text x="60" y="104" class="subtitle">先冻结本次运行实际使用的上下文，再执行分析；是否推进流程始终由人决定。</text>
+
+  <rect x="60" y="150" width="360" height="460" rx="24" fill="#ffffff" stroke="#b8cbc2" stroke-width="2" filter="url(#shadow)"/>
+  <text x="95" y="197" class="h1">① 收集动态来源</text>
+  <g>
+    <rect x="90" y="225" width="300" height="58" rx="12" fill="#eef7f2"/><text x="112" y="251" class="h2">角色与目标</text><text x="112" y="274" class="small">用户、业务角色、流程节点、审查要求</text>
+    <rect x="90" y="295" width="300" height="58" rx="12" fill="#eef7f2"/><text x="112" y="321" class="h2">当前文件</text><text x="112" y="344" class="small">文件版本、结构化解析快照与附件</text>
+    <rect x="90" y="365" width="300" height="74" rx="12" fill="#eef7f2"/><text x="112" y="391" class="h2">完整历史</text><text x="112" y="414" class="small">历轮文件、C 意见、秘书组意见</text><text x="112" y="434" class="small">以及老板审批意见</text>
+    <rect x="90" y="451" width="300" height="58" rx="12" fill="#eef7f2"/><text x="112" y="477" class="h2">RAG 依据</text><text x="112" y="500" class="small">chunks、引用、分数和检索 Trace</text>
+    <rect x="90" y="521" width="300" height="58" rx="12" fill="#eef7f2"/><text x="112" y="547" class="h2">运行配置</text><text x="112" y="570" class="small">Prompt、模型、策略、Tool/MCP 开关</text>
+  </g>
+
+  <rect x="510" y="180" width="410" height="400" rx="26" fill="#eef9f3" stroke="#42a776" stroke-width="4" filter="url(#shadow)"/>
+  <text x="545" y="230" class="h1">② 冻结 ContextPackage</text>
+  <text x="545" y="280" class="body">生成唯一 runId，并锁定：</text>
+  <text x="565" y="320" class="body">• 文件版本与解析快照</text>
+  <text x="565" y="355" class="body">• 历史文件和全部意见</text>
+  <text x="565" y="390" class="body">• RAG chunks 与引用</text>
+  <text x="565" y="425" class="body">• Prompt 版本、模型和参数</text>
+  <text x="545" y="475" class="small">数据库保存关系、状态与哈希；完整快照</text>
+  <text x="545" y="505" class="small">和最终 Prompt 存入 AgentTo 的 MinIO。</text>
+  <rect x="545" y="530" width="335" height="34" rx="17" fill="#dcefe5"/>
+  <text x="565" y="553" class="small">正式上下文事实来源：AgentTo</text>
+
+  <rect x="1010" y="180" width="360" height="400" rx="26" fill="#faf8ff" stroke="#8b78bf" stroke-width="3" filter="url(#shadow)"/>
+  <text x="1045" y="230" class="h1">③ 渲染最终 Prompt</text>
+  <text x="1045" y="280" class="h2">稳定模板</text>
+  <text x="1045" y="312" class="small">角色规则、任务要求、安全边界</text>
+  <text x="1045" y="340" class="small">和输出 JSON Schema</text>
+  <text x="1045" y="390" class="h2">动态上下文</text>
+  <text x="1045" y="422" class="small">当前文件、轮次历史、咨询意见</text>
+  <text x="1045" y="450" class="small">RAG 依据和当前目标</text>
+  <text x="1045" y="500" class="h2">外发边界</text>
+  <text x="1045" y="532" class="small">只发送解析后的文本和结构</text>
+  <text x="1045" y="560" class="small">不发送原文件、MinIO 地址或二进制</text>
+
+  <rect x="1460" y="260" width="280" height="235" rx="24" fill="#fff8ed" stroke="#dfa154" stroke-width="3" filter="url(#shadow)"/>
+  <text x="1500" y="310" class="h1">④ 模型调用</text>
+  <text x="1500" y="355" class="body">DeepSeek 真实启用</text>
+  <text x="1500" y="392" class="small">临时错误重试 2 次</text>
+  <text x="1500" y="424" class="small">默认不自动切换模型</text>
+  <text x="1500" y="456" class="small">完整记录 Token、耗时和错误</text>
+
+  <path d="M420 370 L495 370" class="arrow"/><path d="M920 370 L995 370" class="arrow"/><path d="M1370 370 L1445 370" class="arrow"/>
+
+  <rect x="60" y="680" width="1680" height="255" rx="26" fill="#ffffff" stroke="#b8cbc2" stroke-width="2" filter="url(#shadow)"/>
+  <text x="95" y="730" class="h1">⑤ 持久化异步 Agent Runtime</text>
+  <rect x="1230" y="702" width="460" height="40" rx="20" fill="#e5f4ec"/>
+  <text x="1260" y="729" class="small">SSE 实时进度 · 人工触发 · 不阻断流程</text>
+
+  <g>
+    <rect x="100" y="770" width="350" height="125" rx="18" fill="#f6faf8" stroke="#cddcd5"/>
+    <circle cx="135" cy="805" r="20" fill="#173d32"/><text x="128" y="813" class="num">1</text>
+    <text x="170" y="812" class="h2">Planning</text><text x="125" y="850" class="small">拆解目标、检查范围和优先级</text>
+    <rect x="515" y="770" width="350" height="125" rx="18" fill="#f6faf8" stroke="#cddcd5"/>
+    <circle cx="550" cy="805" r="20" fill="#173d32"/><text x="543" y="813" class="num">2</text>
+    <text x="585" y="812" class="h2">Review</text><text x="540" y="850" class="small">基于完整上下文逐项审查并引用</text>
+    <rect x="930" y="770" width="350" height="125" rx="18" fill="#f6faf8" stroke="#cddcd5"/>
+    <circle cx="965" cy="805" r="20" fill="#173d32"/><text x="958" y="813" class="num">3</text>
+    <text x="1000" y="812" class="h2">Reflection</text><text x="955" y="850" class="small">检查遗漏、矛盾和证据不足</text>
+    <rect x="1345" y="770" width="350" height="125" rx="18" fill="#f6faf8" stroke="#cddcd5"/>
+    <circle cx="1380" cy="805" r="20" fill="#173d32"/><text x="1373" y="813" class="num">4</text>
+    <text x="1415" y="812" class="h2">Finalize</text><text x="1370" y="850" class="small">生成结构化报告并校验 Schema</text>
+  </g>
+  <path d="M450 833 L500 833" class="arrow"/><path d="M865 833 L915 833" class="arrow"/><path d="M1280 833 L1330 833" class="arrow"/>
+
+  <g filter="url(#shadow)">
+    <rect x="60" y="980" width="520" height="140" rx="20" fill="#ffffff" stroke="#cddbd4"/>
+    <rect x="640" y="980" width="520" height="140" rx="20" fill="#ffffff" stroke="#cddbd4"/>
+    <rect x="1220" y="980" width="520" height="140" rx="20" fill="#ffffff" stroke="#cddbd4"/>
+  </g>
+  <text x="95" y="1025" class="h1">结构化审查报告</text><text x="95" y="1062" class="small">结论、问题、风险、证据、建议和待确认项</text><text x="95" y="1092" class="small">模型原始输出永久保留，不被修复结果覆盖</text>
+  <text x="675" y="1025" class="h1">人工反馈</text><text x="675" y="1062" class="small">采纳、忽略、修改后采纳、误报、补充遗漏</text><text x="675" y="1092" class="small">Agent 永远不代替人提交正式意见</text>
+  <text x="1255" y="1025" class="h1">对比实验</text><text x="1255" y="1062" class="small">同一 ContextPackage 对比模型、Prompt 和策略</text><text x="1255" y="1092" class="small">实验结果不进入正式业务流程</text>
+
+  <rect x="60" y="1150" width="1680" height="34" rx="17" fill="#fff0d9"/>
+  <text x="90" y="1174" class="small">第一版默认使用完整上下文，不压缩、不静默截断；超过窗口时先预警，仍然发起调用并如实展示结果。</text>
+</svg>

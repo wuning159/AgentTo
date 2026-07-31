@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 1
+
+logging:
+  level:
+    com.agentto.rag: INFO

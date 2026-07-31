@@ -1,0 +1,70 @@
+server:
+  port: ${RAG_SERVER_PORT:18473}
+
+spring:
+  application:
+    name: agentto-rag-service
+  profiles:
+    default: local
+  datasource:
+    url: ${AGENTTO_DB_URL}
+    username: ${AGENTTO_DB_USERNAME}
+    password: ${AGENTTO_DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Shanghai
+  flyway:
+    table: rag_flyway_schema_history
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-migration-naming: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+rag:
+  auth:
+    bootstrap-enabled: ${RAG_ADMIN_BOOTSTRAP_ENABLED:true}
+    bootstrap-username: ${RAG_ADMIN_USERNAME:admin}
+    bootstrap-password: ${RAG_ADMIN_PASSWORD:admin123}
+    session-hours: ${RAG_ADMIN_SESSION_HOURS:12}
+  storage:
+    enabled: ${RAG_MINIO_ENABLED:true}
+    endpoint: ${AGENTTO_MINIO_URL}
+    access-key: ${AGENTTO_MINIO_ACCESS_KEY}
+    secret-key: ${AGENTTO_MINIO_SECRET_KEY}
+    bucket: ${RAG_MINIO_BUCKET:agentto-rag}
+  elasticsearch:
+    enabled: ${RAG_ELASTICSEARCH_ENABLED:true}
+    url: ${AGENTTO_ELASTICSEARCH_URL}
+    username: ${AGENTTO_ELASTICSEARCH_USERNAME:elastic}
+    password: ${AGENTTO_ELASTICSEARCH_PASSWORD}
+    index: ${RAG_ELASTICSEARCH_INDEX:agentto-rag-chunks-v1}
+    dimensions: ${RAG_EMBEDDING_DIMENSIONS:1024}
+  tei:
+    embedding-enabled: ${RAG_EMBEDDING_ENABLED:true}
+    embedding-url: ${AGENTTO_EMBEDDING_URL}
+    rerank-enabled: ${RAG_RERANK_ENABLED:true}
+    rerank-url: ${AGENTTO_RERANK_URL}
+    connect-timeout-seconds: 5
+    read-timeout-seconds: 60
+  chunking:
+    target-chars: 500
+    max-chars: 800
+    overlap-chars: 80
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-}]"

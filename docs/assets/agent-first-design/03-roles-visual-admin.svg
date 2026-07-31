@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1180" viewBox="0 0 1800 1180">
+  <defs>
+    <style>
+      .title{font:700 42px 'Microsoft YaHei','PingFang SC',Arial;fill:#173d32}.subtitle{font:22px 'Microsoft YaHei','PingFang SC',Arial;fill:#6b7c74}
+      .h1{font:700 25px 'Microsoft YaHei','PingFang SC',Arial;fill:#173d32}.h2{font:700 20px 'Microsoft YaHei','PingFang SC',Arial;fill:#244f3d}
+      .body{font:17px 'Microsoft YaHei','PingFang SC',Arial;fill:#566b61}.small{font:15px 'Microsoft YaHei','PingFang SC',Arial;fill:#6c7d75}
+      .cell{font:16px 'Microsoft YaHei','PingFang SC',Arial;fill:#4f655b}.cellh{font:700 16px 'Microsoft YaHei','PingFang SC',Arial;fill:#2d5745}.yes{font:700 22px 'Microsoft YaHei';fill:#2e8b61}.no{font:18px 'Microsoft YaHei';fill:#aab6b0}.switch{font:700 15px 'Microsoft YaHei';fill:#a36a24}
+    </style>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#214f3c" flood-opacity="0.10"/></filter>
+  </defs>
+
+  <rect width="1800" height="1180" fill="#f5f8f6"/>
+  <text x="60" y="68" class="title">角色视图与 Agent 可视化管理台</text>
+  <text x="60" y="104" class="subtitle">同一份文件、同一次 Agent 运行，不同角色只看到与当前职责有关的内容；真正的限制由后端执行。</text>
+
+  <g filter="url(#shadow)">
+    <rect x="60" y="155" width="312" height="300" rx="20" fill="#ffffff" stroke="#d2dfd8" stroke-width="2"/>
+    <rect x="402" y="155" width="312" height="300" rx="20" fill="#ffffff" stroke="#d2dfd8" stroke-width="2"/>
+    <rect x="744" y="155" width="312" height="300" rx="20" fill="#ffffff" stroke="#d2dfd8" stroke-width="2"/>
+    <rect x="1086" y="155" width="312" height="300" rx="20" fill="#ffffff" stroke="#d2dfd8" stroke-width="2"/>
+    <rect x="1428" y="155" width="312" height="300" rx="20" fill="#f8faf9" stroke="#d2dfd8" stroke-width="2"/>
+  </g>
+  <rect x="60" y="155" width="312" height="8" rx="4" fill="#42a776"/><rect x="402" y="155" width="312" height="8" rx="4" fill="#4b9fb5"/>
+  <rect x="744" y="155" width="312" height="8" rx="4" fill="#8b78bf"/><rect x="1086" y="155" width="312" height="8" rx="4" fill="#d79b48"/>
+  <rect x="1428" y="155" width="312" height="8" rx="4" fill="#394d45"/>
+
+  <text x="88" y="205" class="h1">文件主导人 A</text><text x="88" y="235" class="small">每份文件发起时选择</text>
+  <text x="88" y="278" class="body">• 创建任务、上传文件和附件</text><text x="88" y="312" class="body">• 手动运行自审 Agent</text><text x="88" y="346" class="body">• 查看 C 意见并上传新版本</text><text x="88" y="380" class="body">• 提交下一节点或撤回</text><text x="88" y="414" class="body">• 看不到秘书组内部结果</text>
+
+  <text x="430" y="205" class="h1">参与审查的 C</text><text x="430" y="235" class="small">同一任务中的平级审查人</text>
+  <text x="430" y="278" class="body">• 查看被分配的文件和版本</text><text x="430" y="312" class="body">• 提交咨询意见和附件</text><text x="430" y="346" class="body">• 当前阶段没有 Agent 入口</text><text x="430" y="380" class="body">• 不能代替 A 修改文件</text><text x="430" y="414" class="body">• 不能推进其他人的节点</text>
+
+  <text x="772" y="205" class="h1">秘书组</text><text x="772" y="235" class="small">独立角色</text>
+  <text x="772" y="278" class="body">• 接收 A 最终提交的文件</text><text x="772" y="312" class="body">• 手动运行终审 Agent</text><text x="772" y="346" class="body">• 查看全流程文件和意见</text><text x="772" y="380" class="body">• 人工提交或退回到 A</text><text x="772" y="414" class="body">• Agent 结果默认仅本组可见</text>
+
+  <text x="1114" y="205" class="h1">老板</text><text x="1114" y="235" class="small">独立审批角色</text>
+  <text x="1114" y="278" class="body">• 查看正式待审批文件</text><text x="1114" y="312" class="body">• 人工选择通过或不通过</text><text x="1114" y="346" class="body">• 不通过时填写意见并驳回</text><text x="1114" y="380" class="body">• 默认不看秘书组 Agent 结果</text><text x="1114" y="414" class="body">• 是否开放由独立开关控制</text>
+
+  <text x="1456" y="205" class="h1">技术管理员</text><text x="1456" y="235" class="small">平台运行与调优</text>
+  <text x="1456" y="278" class="body">• 管理模型、Prompt 和 Agent</text><text x="1456" y="312" class="body">• 查看完整上下文和 Trace</text><text x="1456" y="346" class="body">• 运行对比实验和错误排查</text><text x="1456" y="380" class="body">• 管理开关、Tool / MCP</text><text x="1456" y="414" class="body">• 不能代替业务人员审批</text>
+
+  <rect x="60" y="510" width="1010" height="590" rx="24" fill="#ffffff" stroke="#cddbd4" stroke-width="2" filter="url(#shadow)"/>
+  <text x="95" y="558" class="h1">核心内容可见性</text>
+  <rect x="95" y="590" width="940" height="55" fill="#edf5f1"/>
+  <text x="120" y="625" class="cellh">内容</text><text x="445" y="625" class="cellh">A</text><text x="570" y="625" class="cellh">C</text><text x="680" y="625" class="cellh">秘书组</text><text x="820" y="625" class="cellh">老板</text><text x="930" y="625" class="cellh">技术管理员</text>
+  <g stroke="#e0e8e4" stroke-width="1">
+    <line x1="95" y1="645" x2="1035" y2="645"/><line x1="95" y1="715" x2="1035" y2="715"/><line x1="95" y1="785" x2="1035" y2="785"/><line x1="95" y1="855" x2="1035" y2="855"/><line x1="95" y1="925" x2="1035" y2="925"/><line x1="95" y1="995" x2="1035" y2="995"/>
+    <line x1="405" y1="590" x2="405" y2="995"/><line x1="515" y1="590" x2="515" y2="995"/><line x1="630" y1="590" x2="630" y2="995"/><line x1="775" y1="590" x2="775" y2="995"/><line x1="895" y1="590" x2="895" y2="995"/>
+  </g>
+  <text x="120" y="690" class="cell">自审 Agent 报告</text><text x="447" y="690" class="yes">●</text><text x="572" y="690" class="no">—</text><text x="697" y="690" class="no">—</text><text x="827" y="690" class="no">—</text><text x="955" y="690" class="yes">●</text>
+  <text x="120" y="760" class="cell">C 咨询意见</text><text x="447" y="760" class="yes">●</text><text x="545" y="760" class="switch">按规则</text><text x="697" y="760" class="yes">●</text><text x="827" y="760" class="yes">●</text><text x="955" y="760" class="yes">●</text>
+  <text x="120" y="830" class="cell">秘书组 Agent 报告</text><text x="447" y="830" class="no">—</text><text x="572" y="830" class="no">—</text><text x="697" y="830" class="yes">●</text><text x="803" y="830" class="switch">开关</text><text x="955" y="830" class="yes">●</text>
+  <text x="120" y="900" class="cell">完整 Prompt / 原始输出</text><text x="447" y="900" class="no">—</text><text x="572" y="900" class="no">—</text><text x="697" y="900" class="no">—</text><text x="827" y="900" class="no">—</text><text x="955" y="900" class="yes">●</text>
+  <text x="120" y="970" class="cell">模型、Token 和费用</text><text x="447" y="970" class="no">—</text><text x="572" y="970" class="no">—</text><text x="697" y="970" class="no">—</text><text x="827" y="970" class="no">—</text><text x="955" y="970" class="yes">●</text>
+  <rect x="95" y="1025" width="940" height="50" rx="12" fill="#fff3df"/><text x="118" y="1057" class="small">技术管理员查看、复制或导出完整文件、Prompt 和模型原始输出时，必须记录审计。</text>
+
+  <rect x="1120" y="510" width="620" height="590" rx="24" fill="#ffffff" stroke="#cddbd4" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1155" y="558" class="h1">Agent 技术管理台</text>
+  <g>
+    <rect x="1155" y="595" width="260" height="90" rx="15" fill="#f5f9f7" stroke="#d7e4dd"/><text x="1180" y="628" class="h2">模型管理</text><text x="1180" y="658" class="small">提供方、模型、密钥引用、验证</text>
+    <rect x="1445" y="595" width="260" height="90" rx="15" fill="#f5f9f7" stroke="#d7e4dd"/><text x="1470" y="628" class="h2">Prompt 模板</text><text x="1470" y="658" class="small">草稿、版本、变量、发布、回滚</text>
+    <rect x="1155" y="705" width="260" height="90" rx="15" fill="#eaf7f0" stroke="#8bcaae"/><text x="1180" y="738" class="h2">运行监控</text><text x="1180" y="768" class="small">SSE、阶段时间线、取消和重试</text>
+    <rect x="1445" y="705" width="260" height="90" rx="15" fill="#eaf7f0" stroke="#8bcaae"/><text x="1470" y="738" class="h2">上下文 / Prompt</text><text x="1470" y="768" class="small">来源、完整渲染、Token 占比</text>
+    <rect x="1155" y="815" width="260" height="90" rx="15" fill="#f5f9f7" stroke="#d7e4dd"/><text x="1180" y="848" class="h2">报告与反馈</text><text x="1180" y="878" class="small">问题、证据、采纳和误报</text>
+    <rect x="1445" y="815" width="260" height="90" rx="15" fill="#f5f9f7" stroke="#d7e4dd"/><text x="1470" y="848" class="h2">对比实验</text><text x="1470" y="878" class="small">模型、Prompt 和执行策略对比</text>
+    <rect x="1155" y="925" width="260" height="90" rx="15" fill="#f8f8f8" stroke="#bdc8c2" stroke-dasharray="9 7"/><text x="1180" y="958" class="h2">Tool / MCP</text><text x="1180" y="988" class="small">只读能力，按多层开关控制</text>
+    <rect x="1445" y="925" width="260" height="90" rx="15" fill="#f5f9f7" stroke="#d7e4dd"/><text x="1470" y="958" class="h2">开关与审计</text><text x="1470" y="988" class="small">开放范围、访问与配置变更</text>
+  </g>
+  <rect x="1155" y="1040" width="550" height="36" rx="18" fill="#e7f3ed"/><text x="1185" y="1065" class="small">菜单隐藏只是体验；按钮、接口、任务数据和字段内容均由后端强制校验</text>
+
+  <rect x="60" y="1130" width="1680" height="34" rx="17" fill="#e8f4ee"/>
+  <text x="90" y="1154" class="small">固定系统角色与每份文件的动态 A / C 角色叠加使用；所有 Agent 结果按任务、节点、角色和字段范围授权。</text>
+</svg>

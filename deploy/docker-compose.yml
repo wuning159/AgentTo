@@ -1,0 +1,174 @@
+name: agentto
+
+services:
+  mysql:
+    image: mysql:8.4@sha256:d36d39a64cd12a5c1cc9e6aa2bfb5f8d4c81a2f6586e0a04a9ae13939db02209
+    container_name: agentto-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${MYSQL_BIND_ADDRESS:-127.0.0.1}:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ${AGENTTO_DATA_DIR:-./data}/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - agentto
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:7.4-alpine
+    container_name: agentto-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      TZ: Asia/Shanghai
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_BIND_ADDRESS:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ${AGENTTO_DATA_DIR:-./data}/redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - agentto
+
+  elasticsearch:
+    build:
+      context: ./elasticsearch
+    image: agentto-elasticsearch:9.4.2-ik
+    container_name: agentto-elasticsearch
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      discovery.type: single-node
+      cluster.name: agentto-elasticsearch
+      node.name: agentto-es01
+      xpack.security.enabled: "true"
+      xpack.security.http.ssl.enabled: "false"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    ports:
+      - "${ELASTICSEARCH_BIND_ADDRESS:-127.0.0.1}:${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - ${AGENTTO_DATA_DIR:-./data}/elasticsearch:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u elastic:$$ELASTIC_PASSWORD http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - agentto
+
+  minio:
+    image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    container_name: agentto-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      TZ: Asia/Shanghai
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - ${MINIO_DATA_DIR:-./data/minio}:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - agentto
+
+  tei-embedding:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9@sha256:ad950d30878eceb72aaf32024d26fa2b1d04a75304fa0b4776b49aa1941fea07
+    container_name: agentto-tei-embedding
+    restart: unless-stopped
+    command: ["--model-id", "/data/models/bge-large-zh-v1.5", "--port", "80"]
+    ports:
+      - "${TEI_BIND_ADDRESS:-127.0.0.1}:${TEI_EMBEDDING_PORT:-8081}:80"
+    volumes:
+      - ${MODEL_ROOT:-/data/models}:/data/models:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:80/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+    networks:
+      - agentto
+
+  tei-rerank:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9@sha256:ad950d30878eceb72aaf32024d26fa2b1d04a75304fa0b4776b49aa1941fea07
+    container_name: agentto-tei-rerank
+    restart: unless-stopped
+    command: ["--model-id", "/data/models/bge-reranker-large", "--port", "80"]
+    ports:
+      - "${TEI_BIND_ADDRESS:-127.0.0.1}:${TEI_RERANK_PORT:-8082}:80"
+    volumes:
+      - ${MODEL_ROOT:-/data/models}:/data/models:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:80/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+    networks:
+      - agentto
+
+  backend:
+    profiles:
+      - app
+    build:
+      context: ../backend
+    image: agentto-backend:0.1.0
+    container_name: agentto-backend
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: prod
+      AGENTTO_NACOS_SERVER: ${AGENTTO_NACOS_SERVER}
+      AGENTTO_NACOS_NAMESPACE: ${AGENTTO_NACOS_NAMESPACE}
+      AGENTTO_NACOS_GROUP: ${AGENTTO_NACOS_GROUP:-AGENTTO}
+      AGENTTO_NACOS_DATA_ID: ${AGENTTO_NACOS_DATA_ID:-agentto-backend.yml}
+      AGENTTO_NACOS_USERNAME: ${AGENTTO_NACOS_USERNAME:-}
+      AGENTTO_NACOS_PASSWORD: ${AGENTTO_NACOS_PASSWORD:-}
+    ports:
+      - "${BACKEND_BIND_ADDRESS:-0.0.0.0}:${BACKEND_PORT:-18472}:18472"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:18472/actuator/health/readiness | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    networks:
+      - agentto
+
+networks:
+  agentto:
+    name: agentto-network

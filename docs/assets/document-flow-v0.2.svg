@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1000" viewBox="0 0 1320 1000" role="img" aria-labelledby="title desc">
+  <title id="title">文件流转与处理流程图</title>
+  <desc id="desc">文件从主导部门发起，经过相关部门并行审查、Agent 辅助、人员确认、主导部门处理和修改、意见闭环、秘书组复核与最终审批。未闭环或未通过时退回修改，通过后归档。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .box { fill: #f8fafc; stroke: #64748b; stroke-width: 2; }
+      .human { fill: #eaf2ff; stroke: #2563eb; stroke-width: 2.3; }
+      .agent { fill: #eefbf3; stroke: #16a34a; stroke-width: 2.3; }
+      .decision { fill: #fff7e8; stroke: #d97706; stroke-width: 2.3; }
+      .done { fill: #eefbf3; stroke: #15803d; stroke-width: 2.5; }
+      .line { fill: none; stroke: #64748b; stroke-width: 2.2; marker-end: url(#arrow); }
+      .return { fill: none; stroke: #b45309; stroke-width: 2.2; marker-end: url(#arrow); }
+      .text { font: 18px "Microsoft YaHei", "Segoe UI", sans-serif; fill: #172033; text-anchor: middle; }
+      .small { font: 16px "Microsoft YaHei", "Segoe UI", sans-serif; fill: #334155; text-anchor: middle; }
+      .label { font: 600 16px "Microsoft YaHei", "Segoe UI", sans-serif; fill: #92400e; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect class="human" x="40" y="35" width="340" height="72" rx="14"/>
+  <text class="text" x="210" y="66">主导部门起草</text>
+  <text class="text" x="210" y="92">并发起文件</text>
+
+  <rect class="box" x="490" y="35" width="340" height="72" rx="14"/>
+  <text class="text" x="660" y="66">选择文件类型、填写信息</text>
+  <text class="text" x="660" y="92">并确定参与部门</text>
+
+  <rect class="box" x="940" y="35" width="340" height="72" rx="14"/>
+  <text class="text" x="1110" y="66">生成审查任务</text>
+  <text class="text" x="1110" y="92">并通知相关部门</text>
+
+  <path class="line" d="M380 71 L490 71"/>
+  <path class="line" d="M830 71 L940 71"/>
+
+  <rect class="human" x="940" y="155" width="340" height="72" rx="14"/>
+  <text class="text" x="1110" y="198">各相关部门并行审查</text>
+  <path class="line" d="M1110 107 L1110 155"/>
+
+  <rect class="agent" x="490" y="155" width="340" height="72" rx="14"/>
+  <text class="text" x="660" y="184">部门 Agent 检查文件</text>
+  <text class="text" x="660" y="210">查找依据并形成建议草稿</text>
+  <path class="line" d="M940 191 L830 191"/>
+
+  <rect class="human" x="40" y="155" width="340" height="72" rx="14"/>
+  <text class="text" x="210" y="184">部门人员修改、确认</text>
+  <text class="text" x="210" y="210">并提交正式意见</text>
+  <path class="line" d="M490 191 L380 191"/>
+
+  <rect class="human" x="40" y="285" width="340" height="72" rx="14"/>
+  <text class="text" x="210" y="314">主导部门汇总意见</text>
+  <text class="text" x="210" y="340">并逐条处理</text>
+  <path class="line" d="M210 227 L210 285"/>
+
+  <rect class="human" x="490" y="285" width="340" height="72" rx="14"/>
+  <text class="text" x="660" y="314">上传新版本</text>
+  <text class="text" x="660" y="340">并说明修改情况</text>
+  <path class="line" d="M380 321 L490 321"/>
+
+  <polygon class="decision" points="1110,260 1280,321 1110,382 940,321"/>
+  <text class="text" x="1110" y="315">重要意见是否</text>
+  <text class="text" x="1110" y="341">已经闭环</text>
+  <path class="line" d="M830 321 L940 321"/>
+
+  <path class="return" d="M1280 321 L1300 321 L1300 191 L1280 191"/>
+  <text class="label" x="1170" y="247">否：返回相关部门继续审查</text>
+
+  <rect class="human" x="940" y="445" width="340" height="72" rx="14"/>
+  <text class="text" x="1110" y="488">秘书组复核</text>
+  <path class="line" d="M1110 382 L1110 445"/>
+  <text class="small" x="1132" y="418">是</text>
+
+  <polygon class="decision" points="1110,555 1280,616 1110,677 940,616"/>
+  <text class="text" x="1110" y="610">是否具备</text>
+  <text class="text" x="1110" y="636">上报条件</text>
+  <path class="line" d="M1110 517 L1110 555"/>
+
+  <path class="return" d="M940 616 L720 616 L720 405 L210 405 L210 357"/>
+  <text class="label" x="735" y="599">否：退回主导部门修改</text>
+
+  <rect class="human" x="940" y="720" width="340" height="72" rx="14"/>
+  <text class="text" x="1110" y="763">提交最终审批人</text>
+  <path class="line" d="M1110 677 L1110 720"/>
+  <text class="small" x="1132" y="703">是</text>
+
+  <polygon class="decision" points="1110,820 1280,875 1110,930 940,875"/>
+  <text class="text" x="1110" y="881">审批结果</text>
+  <path class="line" d="M1110 792 L1110 820"/>
+
+  <path class="return" d="M940 875 L620 875 L620 650 L170 650 L170 357"/>
+  <text class="label" x="635" y="858">退回：主导部门重新处理</text>
+
+  <rect class="done" x="940" y="950" width="340" height="42" rx="14"/>
+  <text class="text" x="1110" y="978">通过：归档、发布或进入执行</text>
+  <path class="line" d="M1110 930 L1110 950"/>
+</svg>
