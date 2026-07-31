@@ -63,6 +63,7 @@ public class ElasticsearchChunkIndex implements ChunkIndex {
         properties.put("chunk_uid", Map.of("type", "keyword"));
         properties.put("document_id", Map.of("type", "long"));
         properties.put("version_id", Map.of("type", "long"));
+        properties.put("knowledge_base_id", Map.of("type", "long"));
         properties.put("ordinal_no", Map.of("type", "integer"));
         properties.put("title", Map.of("type", "text", "analyzer", "ik_max_word", "search_analyzer", "ik_smart"));
         properties.put("content", Map.of("type", "text", "analyzer", "ik_max_word", "search_analyzer", "ik_smart"));
@@ -92,6 +93,7 @@ public class ElasticsearchChunkIndex implements ChunkIndex {
             source.put("chunk_uid", chunk.chunkId());
             source.put("document_id", chunk.documentId());
             source.put("version_id", chunk.versionId());
+            source.put("knowledge_base_id", chunk.knowledgeBaseId());
             source.put("ordinal_no", chunk.ordinal());
             source.put("title", chunk.title() == null ? "" : chunk.title());
             source.put("content", chunk.content());
@@ -114,6 +116,7 @@ public class ElasticsearchChunkIndex implements ChunkIndex {
     }
 
     @Override
+    @Deprecated
     public List<IndexSearchHit> keywordSearch(String query, int limit) {
         Map<String, Object> multiMatch = Map.of("query", query, "fields", List.of("content^2", "title"));
         Map<String, Object> bool = Map.of("must", Map.of("multi_match", multiMatch),
@@ -122,6 +125,7 @@ public class ElasticsearchChunkIndex implements ChunkIndex {
     }
 
     @Override
+    @Deprecated
     public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
         Map<String, Object> knn = new LinkedHashMap<>();
         knn.put("field", "embedding");
@@ -129,6 +133,39 @@ public class ElasticsearchChunkIndex implements ChunkIndex {
         knn.put("k", limit);
         knn.put("num_candidates", Math.max(limit * 3, 50));
         knn.put("filter", Map.of("term", Map.of("active", true)));
+        return search(Map.of("size", limit, "knn", knn));
+    }
+
+    /**
+     * 关键词检索（带知识库范围过滤）。
+     * 使用 terms 过滤限定 knowledge_base_id。
+     */
+    @Override
+    public List<IndexSearchHit> keywordSearch(String query, SearchScope scope, int limit) {
+        Map<String, Object> multiMatch = Map.of("query", query, "fields", List.of("content^2", "title"));
+        List<Map<String, Object>> filters = new ArrayList<>();
+        filters.add(Map.of("term", Map.of("active", true)));
+        filters.add(Map.of("terms", Map.of("knowledge_base_id", List.copyOf(scope.knowledgeBaseIds()))));
+        Map<String, Object> bool = Map.of("must", Map.of("multi_match", multiMatch),
+                "filter", filters);
+        return search(Map.of("size", limit, "query", Map.of("bool", bool)));
+    }
+
+    /**
+     * 向量检索（带知识库范围过滤）。
+     * 使用 terms 过滤限定 knowledge_base_id。
+     */
+    @Override
+    public List<IndexSearchHit> vectorSearch(float[] queryVector, SearchScope scope, int limit) {
+        Map<String, Object> knn = new LinkedHashMap<>();
+        knn.put("field", "embedding");
+        knn.put("query_vector", queryVector);
+        knn.put("k", limit);
+        knn.put("num_candidates", Math.max(limit * 3, 50));
+        List<Object> kbFilter = List.copyOf(scope.knowledgeBaseIds());
+        knn.put("filter", Map.of("bool", Map.of("filter", List.of(
+                Map.of("term", Map.of("active", true)),
+                Map.of("terms", Map.of("knowledge_base_id", kbFilter))))));
         return search(Map.of("size", limit, "knn", knn));
     }
 
@@ -169,6 +206,7 @@ public class ElasticsearchChunkIndex implements ChunkIndex {
                         source.path("title").asText(),
                         source.path("document_id").isNumber() ? source.path("document_id").asLong() : null,
                         source.path("version_id").isNumber() ? source.path("version_id").asLong() : null,
+                        source.path("knowledge_base_id").isNumber() ? source.path("knowledge_base_id").asLong() : null,
                         source.path("ordinal_no").asInt(),
                         hit.path("_score").asDouble(), metadata));
             }

@@ -13,6 +13,7 @@ import com.agentto.rag.embedding.EmbeddingService;
 import com.agentto.rag.index.ChunkIndex;
 import com.agentto.rag.index.IndexSearchHit;
 import com.agentto.rag.index.IndexedChunk;
+import com.agentto.rag.index.SearchScope;
 
 class HybridRetrievalServiceTest {
 
@@ -177,16 +178,22 @@ class HybridRetrievalServiceTest {
     private static final class FixedIndex implements ChunkIndex {
         @Override public void ensureIndex() { }
         @Override public void replaceVersionChunks(Long versionId, List<IndexedChunk> chunks) { }
-        @Override public List<IndexSearchHit> keywordSearch(String query, int limit) {
+        @Override public List<IndexSearchHit> keywordSearch(String query, SearchScope scope, int limit) {
+            return List.of();
+        }
+        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, SearchScope scope, int limit) {
+            return List.of();
+        }
+        @Override @Deprecated public List<IndexSearchHit> keywordSearch(String query, int limit) {
             return List.of(hit("chunk-a", "A", 8.2), hit("chunk-b", "B", 7.1));
         }
-        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
+        @Override @Deprecated public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
             return List.of(hit("chunk-b", "B", 0.91), hit("chunk-c", "C", 0.86));
         }
         @Override public boolean healthy() { return true; }
         @Override public String indexVersion() { return "test"; }
         private IndexSearchHit hit(String id, String content, double score) {
-            return new IndexSearchHit(id, content, "制度", 1L, 2L, 0, score, Map.of("page", "1"));
+            return new IndexSearchHit(id, content, "制度", 1L, 2L, 1L, 0, score, Map.of("page", "1"));
         }
     }
 
@@ -212,16 +219,22 @@ class HybridRetrievalServiceTest {
     private static final class DuplicateContentIndex implements ChunkIndex {
         @Override public void ensureIndex() { }
         @Override public void replaceVersionChunks(Long versionId, List<IndexedChunk> chunks) { }
-        @Override public List<IndexSearchHit> keywordSearch(String query, int limit) {
+        @Override public List<IndexSearchHit> keywordSearch(String query, SearchScope scope, int limit) {
+            return List.of();
+        }
+        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, SearchScope scope, int limit) {
+            return List.of();
+        }
+        @Override @Deprecated public List<IndexSearchHit> keywordSearch(String query, int limit) {
             return List.of(hit("chunk-a", "HITL 是什么", 8.2), hit("chunk-c", "RACI 是什么", 7.1));
         }
-        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
+        @Override @Deprecated public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
             return List.of(hit("chunk-b", "ＨＩＴＬ\n 是什么", 0.91), hit("chunk-d", "审批流程", 0.86));
         }
         @Override public boolean healthy() { return true; }
         @Override public String indexVersion() { return "test"; }
         private IndexSearchHit hit(String id, String content, double score) {
-            return new IndexSearchHit(id, content, "制度", 1L, 2L, 0, score, Map.of("page", "1"));
+            return new IndexSearchHit(id, content, "制度", 1L, 2L, 1L, 0, score, Map.of("page", "1"));
         }
     }
 
@@ -230,10 +243,16 @@ class HybridRetrievalServiceTest {
 
         @Override public void ensureIndex() { }
         @Override public void replaceVersionChunks(Long versionId, List<IndexedChunk> chunks) { }
-        @Override public List<IndexSearchHit> keywordSearch(String query, int limit) {
+        @Override public List<IndexSearchHit> keywordSearch(String query, SearchScope scope, int limit) {
+            return List.of();
+        }
+        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, SearchScope scope, int limit) {
+            throw new IllegalStateException("vector offline");
+        }
+        @Override @Deprecated public List<IndexSearchHit> keywordSearch(String query, int limit) {
             return delegate.keywordSearch(query, limit);
         }
-        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
+        @Override @Deprecated public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
             throw new IllegalStateException("vector offline");
         }
         @Override public boolean healthy() { return false; }

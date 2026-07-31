@@ -39,7 +39,7 @@ class ElasticsearchChunkIndexTest {
 
         index.ensureIndex();
         index.replaceVersionChunks(7L, List.of(new IndexedChunk(
-                "chunk-1", 2L, 7L, 0, "制度", "预算必须经过审查", Map.of("page", "1"),
+                "chunk-1", 2L, 7L, 1L, 0, "制度", "预算必须经过审查", Map.of("page", "1"),
                 new float[] { 0.1f, 0.2f, 0.3f })));
         List<IndexSearchHit> keyword = index.keywordSearch("预算", 5);
         List<IndexSearchHit> vector = index.vectorSearch(new float[] { 0.1f, 0.2f, 0.3f }, 5);

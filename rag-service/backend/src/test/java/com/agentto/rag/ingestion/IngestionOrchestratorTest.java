@@ -37,6 +37,7 @@ import com.agentto.rag.embedding.EmbeddingService;
 import com.agentto.rag.index.ChunkIndex;
 import com.agentto.rag.index.IndexSearchHit;
 import com.agentto.rag.index.IndexedChunk;
+import com.agentto.rag.index.SearchScope;
 import com.agentto.rag.observability.TechnicalStageDetail;
 import com.agentto.rag.storage.ObjectStorageService;
 import com.agentto.rag.storage.StoredObject;
@@ -205,8 +206,10 @@ class IngestionOrchestratorTest {
         @Override public void replaceVersionChunks(Long versionId, List<IndexedChunk> values) {
             chunks.clear(); chunks.addAll(values);
         }
-        @Override public List<IndexSearchHit> keywordSearch(String query, int limit) { return List.of(); }
-        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) { return List.of(); }
+        @Override public List<IndexSearchHit> keywordSearch(String query, SearchScope scope, int limit) { return List.of(); }
+        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, SearchScope scope, int limit) { return List.of(); }
+        @Override @Deprecated public List<IndexSearchHit> keywordSearch(String query, int limit) { return List.of(); }
+        @Override @Deprecated public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) { return List.of(); }
         @Override public boolean healthy() { return true; }
         @Override public String indexVersion() { return "test-index"; }
         void clear() { chunks.clear(); }
