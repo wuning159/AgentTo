@@ -39,8 +39,8 @@ public class DocumentAdminController {
 
     @PostMapping(value = "/documents", consumes = "multipart/form-data")
     public ApiResponse<UploadResult> upload(@RequestPart("file") MultipartFile file,
-            @RequestParam(required = false) String category, HttpServletRequest request) {
-        UploadResult result = documentService.upload(file, category, AuthRequestContext.principal(request).userId());
+            @RequestParam Long knowledgeBaseId, HttpServletRequest request) {
+        UploadResult result = documentService.upload(file, knowledgeBaseId, AuthRequestContext.principal(request).userId());
         if (result.jobId() != null) {
             ingestionLauncher.launch(result.jobId());
         }

@@ -186,4 +186,48 @@ class KnowledgeBaseAdminServiceTest {
 
         verify(grantRepository).deleteByKnowledgeBaseIdAndClientAppId(1L, 20L);
     }
+
+    /**
+     * requireActive 在知识库不存在时抛出异常。
+     */
+    @Test
+    void requireActiveThrowsWhenKnowledgeBaseNotFound() {
+        when(knowledgeBaseRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.requireActive(999L))
+                .isInstanceOf(KnowledgeBaseNotWritableException.class)
+                .hasMessageContaining("不存在");
+    }
+
+    /**
+     * requireActive 在知识库被禁用时抛出异常。
+     */
+    @Test
+    void requireActiveThrowsWhenKnowledgeBaseDisabled() {
+        KnowledgeBase kb = new KnowledgeBase("kb-001", "禁用KB", "PRIVATE", 10L);
+        kb.setId(1L);
+        kb.setStatus("DISABLED");
+
+        when(knowledgeBaseRepository.findById(1L)).thenReturn(Optional.of(kb));
+
+        assertThatThrownBy(() -> service.requireActive(1L))
+                .isInstanceOf(KnowledgeBaseNotWritableException.class)
+                .hasMessageContaining("禁用");
+    }
+
+    /**
+     * requireActive 在知识库活跃时正常返回。
+     */
+    @Test
+    void requireActivePassesForActiveKnowledgeBase() {
+        KnowledgeBase kb = new KnowledgeBase("kb-001", "活跃KB", "PRIVATE", 10L);
+        kb.setId(1L);
+        kb.setStatus("ACTIVE");
+
+        when(knowledgeBaseRepository.findById(1L)).thenReturn(Optional.of(kb));
+
+        service.requireActive(1L);
+
+        verify(knowledgeBaseRepository).findById(1L);
+    }
 }

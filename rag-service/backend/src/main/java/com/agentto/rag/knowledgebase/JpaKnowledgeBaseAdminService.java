@@ -34,6 +34,19 @@ public class JpaKnowledgeBaseAdminService implements KnowledgeBaseAdminService {
     }
 
     /**
+     * 校验知识库存在且处于 ACTIVE 状态。
+     * 用于文档入库前确认目标知识库可写。
+     */
+    @Override
+    public void requireActive(Long knowledgeBaseId) {
+        KnowledgeBase kb = knowledgeBaseRepository.findById(knowledgeBaseId)
+                .orElseThrow(() -> new KnowledgeBaseNotWritableException("知识库不存在: " + knowledgeBaseId));
+        if (!kb.isActive()) {
+            throw new KnowledgeBaseNotWritableException("知识库已被禁用: " + knowledgeBaseId);
+        }
+    }
+
+    /**
      * 创建知识库。
      * 验证所有者应用存在后，生成唯一标识并保存。
      */

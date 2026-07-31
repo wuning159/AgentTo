@@ -2,9 +2,18 @@ package com.agentto.rag.knowledgebase;
 
 /**
  * 知识库管理服务接口。
- * 提供知识库创建、画像更新和共享授权管理能力。
+ * 提供知识库创建、画像更新、共享授权管理和活跃校验能力。
  */
 public interface KnowledgeBaseAdminService {
+
+    /**
+     * 校验知识库存在且处于 ACTIVE 状态。
+     * 用于文档入库前确认目标知识库可写。
+     *
+     * @param knowledgeBaseId 知识库 ID
+     * @throws KnowledgeBaseNotWritableException 当知识库不存在或已被禁用时抛出
+     */
+    void requireActive(Long knowledgeBaseId);
 
     /**
      * 创建知识库。

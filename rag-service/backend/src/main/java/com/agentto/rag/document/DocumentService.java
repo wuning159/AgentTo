@@ -1,7 +1,6 @@
 package com.agentto.rag.document;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
@@ -16,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.agentto.rag.ingestion.IngestionJob;
 import com.agentto.rag.ingestion.IngestionJobRepository;
 import com.agentto.rag.ingestion.parser.DocumentParserFactory;
+import com.agentto.rag.knowledgebase.KnowledgeBaseAdminService;
 import com.agentto.rag.storage.ObjectStorageService;
 import com.agentto.rag.storage.StoredObject;
 
@@ -27,21 +27,36 @@ public class DocumentService {
     private final IngestionJobRepository jobRepository;
     private final DocumentParserFactory parserFactory;
     private final ObjectStorageService storage;
+    private final KnowledgeBaseAdminService knowledgeBaseAdminService;
 
     public DocumentService(DocumentRepository documentRepository, DocumentVersionRepository versionRepository,
-            IngestionJobRepository jobRepository, DocumentParserFactory parserFactory, ObjectStorageService storage) {
+            IngestionJobRepository jobRepository, DocumentParserFactory parserFactory, ObjectStorageService storage,
+            KnowledgeBaseAdminService knowledgeBaseAdminService) {
         this.documentRepository = documentRepository;
         this.versionRepository = versionRepository;
         this.jobRepository = jobRepository;
         this.parserFactory = parserFactory;
         this.storage = storage;
+        this.knowledgeBaseAdminService = knowledgeBaseAdminService;
     }
 
+    /**
+     * 上传文档到指定知识库。
+     * 校验知识库存在且处于 ACTIVE 状态后，保存原始文件并创建入库任务。
+     *
+     * @param file            上传文件
+     * @param knowledgeBaseId 目标知识库 ID
+     * @param operatorId      操作者 ID
+     * @return 上传结果
+     * @throws KnowledgeBaseNotWritableException 当知识库不存在或已被禁用时抛出
+     */
     @Transactional
-    public UploadResult upload(MultipartFile file, String category, Long adminId) {
+    public UploadResult upload(MultipartFile file, Long knowledgeBaseId, Long operatorId) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("上传文件不能为空");
         }
+        // 校验知识库存在且活跃
+        knowledgeBaseAdminService.requireActive(knowledgeBaseId);
         String filename = safeFilename(file.getOriginalFilename());
         parserFactory.forFile(filename);
         byte[] bytes = bytes(file);
@@ -53,10 +68,9 @@ public class DocumentService {
         String objectKey = objectKey(filename);
         StoredObject stored = storage.put(objectKey, bytes, file.getContentType());
 
-        // 暂用默认知识库 ID（V4 迁移插入的 legacy-default-kb），Task 5 将正式接入
-        RagDocument document = documentRepository.save(RagDocument.manual(filename, normalize(category), 1L, adminId));
+        RagDocument document = documentRepository.save(RagDocument.manual(filename, null, knowledgeBaseId, operatorId));
         RagDocumentVersion version = versionRepository.save(RagDocumentVersion.first(document.getId(), filename,
-                file.getContentType(), bytes.length, sha256, stored.bucket(), stored.objectKey(), adminId));
+                file.getContentType(), bytes.length, sha256, stored.bucket(), stored.objectKey(), operatorId));
         document.setCurrentVersion(version.getId());
         documentRepository.save(document);
         IngestionJob job = jobRepository.save(IngestionJob.queued(document.getId(), version.getId()));
@@ -95,11 +109,4 @@ public class DocumentService {
         }
     }
 
-    private String normalize(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        byte[] utf8 = value.trim().getBytes(StandardCharsets.UTF_8);
-        return utf8.length <= 128 ? value.trim() : new String(utf8, 0, 128, StandardCharsets.UTF_8);
-    }
 }

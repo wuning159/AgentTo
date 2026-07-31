@@ -24,6 +24,9 @@ import com.agentto.rag.auth.AdminSessionRepository;
 import com.agentto.rag.auth.AdminUser;
 import com.agentto.rag.auth.AdminUserRepository;
 import com.agentto.rag.ingestion.IngestionJobRepository;
+import com.agentto.rag.knowledgebase.KnowledgeBase;
+import com.agentto.rag.knowledgebase.KnowledgeBaseNotWritableException;
+import com.agentto.rag.knowledgebase.KnowledgeBaseRepository;
 import com.agentto.rag.storage.ObjectStorageService;
 import com.agentto.rag.storage.StoredObject;
 
@@ -45,6 +48,9 @@ class DocumentServiceTest {
     private IngestionJobRepository jobRepository;
 
     @Autowired
+    private KnowledgeBaseRepository knowledgeBaseRepository;
+
+    @Autowired
     private AdminUserRepository userRepository;
 
     @Autowired
@@ -57,17 +63,22 @@ class DocumentServiceTest {
     private MemoryStorage storage;
 
     private Long adminId;
+    private Long knowledgeBaseId;
 
     @BeforeEach
     void setUp() {
         jobRepository.deleteAll();
         versionRepository.deleteAll();
         documentRepository.deleteAll();
+        knowledgeBaseRepository.deleteAll();
         sessionRepository.deleteAll();
         userRepository.deleteAll();
         storage.clear();
         adminId = userRepository.save(AdminUser.create("admin", "管理员", passwordEncoder.encode("password")))
                 .getId();
+        KnowledgeBase kb = knowledgeBaseRepository.save(
+                new KnowledgeBase("kb-test-001", "测试知识库", "PRIVATE", null));
+        knowledgeBaseId = kb.getId();
     }
 
     @Test
@@ -76,7 +87,7 @@ class DocumentServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "制度.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document", bytes);
 
-        UploadResult result = documentService.upload(file, "公司制度", adminId);
+        UploadResult result = documentService.upload(file, knowledgeBaseId, adminId);
 
         assertThat(result.documentId()).isNotNull();
         assertThat(result.versionId()).isNotNull();
@@ -85,6 +96,8 @@ class DocumentServiceTest {
         assertThat(versionRepository.findById(result.versionId()).orElseThrow().getSha256())
                 .isEqualTo("e76bda917de8995693adb36b33262160e895318a635ca11ac8272b3a630c37b1");
         assertThat(jobRepository.findById(result.jobId()).orElseThrow().getStatus()).isEqualTo("QUEUED");
+        assertThat(documentRepository.findById(result.documentId()).orElseThrow().getKnowledgeBaseId())
+                .isEqualTo(knowledgeBaseId);
     }
 
     @Test
@@ -95,8 +108,8 @@ class DocumentServiceTest {
         MockMultipartFile second = new MockMultipartFile("file", "制度副本.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document", bytes);
 
-        UploadResult created = documentService.upload(first, "公司制度", adminId);
-        UploadResult duplicate = documentService.upload(second, "其他分类", adminId);
+        UploadResult created = documentService.upload(first, knowledgeBaseId, adminId);
+        UploadResult duplicate = documentService.upload(second, knowledgeBaseId, adminId);
 
         assertThat(duplicate.duplicate()).isTrue();
         assertThat(duplicate.documentId()).isEqualTo(created.documentId());
@@ -112,9 +125,35 @@ class DocumentServiceTest {
     void uploadRejectsUnsupportedExtensionBeforeWritingStorage() {
         MockMultipartFile file = new MockMultipartFile("file", "archive.zip", "application/zip", new byte[] { 1 });
 
-        assertThatThrownBy(() -> documentService.upload(file, "测试", adminId))
+        assertThatThrownBy(() -> documentService.upload(file, knowledgeBaseId, adminId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("不支持");
+        assertThat(storage.size()).isZero();
+    }
+
+    /**
+     * 上传到不存在或已被禁用的知识库时应拒绝。
+     */
+    @Test
+    void uploadRejectsUnknownOrDisabledKnowledgeBase() {
+        MockMultipartFile file = new MockMultipartFile("file", "制度.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "content".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        // 不存在的知识库 ID
+        assertThatThrownBy(() -> documentService.upload(file, 999L, adminId))
+                .isInstanceOf(KnowledgeBaseNotWritableException.class)
+                .hasMessageContaining("不存在");
+        assertThat(storage.size()).isZero();
+
+        // 禁用状态的知识库
+        KnowledgeBase disabled = knowledgeBaseRepository.save(
+                new KnowledgeBase("kb-disabled", "禁用知识库", "PRIVATE", null));
+        disabled.setStatus("DISABLED");
+        knowledgeBaseRepository.save(disabled);
+        assertThatThrownBy(() -> documentService.upload(file, disabled.getId(), adminId))
+                .isInstanceOf(KnowledgeBaseNotWritableException.class)
+                .hasMessageContaining("禁用");
         assertThat(storage.size()).isZero();
     }
 

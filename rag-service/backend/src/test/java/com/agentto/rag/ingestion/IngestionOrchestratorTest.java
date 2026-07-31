@@ -38,6 +38,8 @@ import com.agentto.rag.index.ChunkIndex;
 import com.agentto.rag.index.IndexSearchHit;
 import com.agentto.rag.index.IndexedChunk;
 import com.agentto.rag.index.SearchScope;
+import com.agentto.rag.knowledgebase.KnowledgeBase;
+import com.agentto.rag.knowledgebase.KnowledgeBaseRepository;
 import com.agentto.rag.observability.TechnicalStageDetail;
 import com.agentto.rag.storage.ObjectStorageService;
 import com.agentto.rag.storage.StoredObject;
@@ -55,6 +57,7 @@ class IngestionOrchestratorTest {
     @Autowired private RagChunkRepository chunkRepository;
     @Autowired private DocumentVersionRepository versionRepository;
     @Autowired private DocumentRepository documentRepository;
+    @Autowired private KnowledgeBaseRepository knowledgeBaseRepository;
     @Autowired private AdminUserRepository userRepository;
     @Autowired private AdminSessionRepository sessionRepository;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -64,6 +67,7 @@ class IngestionOrchestratorTest {
     @Autowired private IngestionQueryService ingestionQueryService;
 
     private Long adminId;
+    private Long knowledgeBaseId;
 
     @BeforeEach
     void setUp() {
@@ -72,18 +76,22 @@ class IngestionOrchestratorTest {
         jobRepository.deleteAll();
         versionRepository.deleteAll();
         documentRepository.deleteAll();
+        knowledgeBaseRepository.deleteAll();
         sessionRepository.deleteAll();
         userRepository.deleteAll();
         fakeIndex.clear();
         blockingEmbedding.reset();
         adminId = userRepository.save(AdminUser.create("admin", "管理员", passwordEncoder.encode("password"))).getId();
+        KnowledgeBase kb = knowledgeBaseRepository.save(
+                new KnowledgeBase("kb-test-001", "测试知识库", "PRIVATE", null));
+        knowledgeBaseId = kb.getId();
     }
 
     @Test
     void processesUploadedDocxThroughEveryVisibleStage() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "预算制度.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document", docx());
-        UploadResult upload = documentService.upload(file, "公司制度", adminId);
+        UploadResult upload = documentService.upload(file, knowledgeBaseId, adminId);
 
         orchestrator.process(upload.jobId());
 
@@ -123,7 +131,7 @@ class IngestionOrchestratorTest {
     void exposesCurrentStageWhileTheJobIsStillRunning() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "预算制度.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document", docx());
-        UploadResult upload = documentService.upload(file, "公司制度", adminId);
+        UploadResult upload = documentService.upload(file, knowledgeBaseId, adminId);
         blockingEmbedding.pause();
 
         CompletableFuture<Void> processing = CompletableFuture.runAsync(() -> orchestrator.process(upload.jobId()));
@@ -140,6 +148,22 @@ class IngestionOrchestratorTest {
             blockingEmbedding.release();
             processing.get(10, TimeUnit.SECONDS);
         }
+    }
+
+    /**
+     * 入库后每个 IndexedChunk 都应携带与文档一致的知识库 ID。
+     */
+    @Test
+    void ingestionCopiesKnowledgeBaseIdIntoEveryIndexedChunk() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "预算制度.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", docx());
+        UploadResult upload = documentService.upload(file, knowledgeBaseId, adminId);
+
+        orchestrator.process(upload.jobId());
+
+        assertThat(fakeIndex.chunks).isNotEmpty();
+        assertThat(fakeIndex.chunks).extracting(IndexedChunk::knowledgeBaseId)
+                .containsOnly(knowledgeBaseId);
     }
 
     private byte[] docx() throws Exception {

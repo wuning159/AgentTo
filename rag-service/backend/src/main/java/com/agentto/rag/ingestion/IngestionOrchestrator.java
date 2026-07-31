@@ -128,7 +128,8 @@ public class IngestionOrchestrator {
             for (int i = 0; i < chunks.size(); i++) {
                 RagChunk chunk = chunks.get(i);
                 RagChunkEntity entity = entities.get(i);
-                indexed.add(new IndexedChunk(entity.getChunkUid(), document.getId(), version.getId(), chunk.ordinal(),
+                indexed.add(new IndexedChunk(entity.getChunkUid(), document.getId(), version.getId(),
+                        document.getKnowledgeBaseId(), chunk.ordinal(),
                         chunk.metadata().getOrDefault("section", ""), chunk.content(), chunk.metadata(), vectors.get(i)));
                 entity.indexed();
             }
