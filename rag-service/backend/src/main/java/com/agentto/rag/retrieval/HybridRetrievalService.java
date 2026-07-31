@@ -99,7 +99,7 @@ public class HybridRetrievalService {
         float[] queryVector = null;
         long embeddingStarted = System.nanoTime();
         try {
-            queryVector = embeddingService.embed(List.of(query)).getFirst();
+            queryVector = embeddingService.embed(List.of(query)).get(0);
             embeddingMs = elapsedMs(embeddingStarted);
             reporter.completed(RetrievalStage.EMBEDDING, embeddingMs, null);
             report.completed(RetrievalStage.EMBEDDING, embeddingAt, embeddingMs,

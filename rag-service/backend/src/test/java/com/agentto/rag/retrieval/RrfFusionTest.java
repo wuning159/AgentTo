@@ -22,10 +22,10 @@ class RrfFusionTest {
 
         assertThat(result).extracting(RetrievalCandidate::chunkId)
                 .containsExactly("chunk-b", "chunk-a", "chunk-c");
-        assertThat(result.getFirst().keywordRank()).isEqualTo(2);
-        assertThat(result.getFirst().vectorRank()).isEqualTo(1);
-        assertThat(result.getFirst().rrfRank()).isEqualTo(1);
-        assertThat(result.getFirst().rrfScore()).isGreaterThan(result.get(1).rrfScore());
+        assertThat(result.get(0).keywordRank()).isEqualTo(2);
+        assertThat(result.get(0).vectorRank()).isEqualTo(1);
+        assertThat(result.get(0).rrfRank()).isEqualTo(1);
+        assertThat(result.get(0).rrfScore()).isGreaterThan(result.get(1).rrfScore());
     }
 
     @Test

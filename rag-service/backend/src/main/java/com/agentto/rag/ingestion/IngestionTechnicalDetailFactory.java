@@ -65,7 +65,7 @@ public class IngestionTechnicalDetailFactory {
     }
 
     public TechnicalStageDetail embed(List<RagChunk> chunks, List<float[]> vectors, int batchSize) {
-        int dimensions = vectors.isEmpty() ? elasticsearch.dimensions() : vectors.getFirst().length;
+        int dimensions = vectors.isEmpty() ? elasticsearch.dimensions() : vectors.get(0).length;
         List<Map<String, Object>> samples = new ArrayList<>();
         for (int index = 0; index < Math.min(SAMPLE_LIMIT, vectors.size()); index++) {
             float[] vector = vectors.get(index);

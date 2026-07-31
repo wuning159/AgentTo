@@ -19,7 +19,7 @@ class StructureAwareChunkerTest {
         List<RagChunk> chunks = new StructureAwareChunker(20, 32, 4).chunk(blocks);
 
         assertThat(chunks).isNotEmpty().allMatch(chunk -> !chunk.content().isBlank());
-        assertThat(chunks.getFirst().metadata()).containsEntry("section", "第一章");
+        assertThat(chunks.get(0).metadata()).containsEntry("section", "第一章");
         assertThat(chunks).extracting(RagChunk::ordinal).containsExactly(0, 1);
     }
 
@@ -32,7 +32,7 @@ class StructureAwareChunkerTest {
 
         assertThat(chunks).hasSizeGreaterThan(1);
         assertThat(chunks).allMatch(chunk -> chunk.content().length() <= 24);
-        assertThat(chunks.getFirst().metadata()).containsEntry("page", "3");
+        assertThat(chunks.get(0).metadata()).containsEntry("page", "3");
     }
 
     @Test
@@ -45,8 +45,8 @@ class StructureAwareChunkerTest {
         List<RagChunk> chunks = new StructureAwareChunker(18, 32, 4).chunk(blocks);
 
         assertThat(chunks).hasSize(1);
-        assertThat(chunks.getFirst().content()).contains("第一段内容。", "第二段内容。", "第三段内容。");
-        assertThat(chunks.getFirst().metadata())
+        assertThat(chunks.get(0).content()).contains("第一段内容。", "第二段内容。", "第三段内容。");
+        assertThat(chunks.get(0).metadata())
                 .containsEntry("section", "第一章")
                 .containsEntry("paragraphStart", "1")
                 .containsEntry("paragraphEnd", "3");

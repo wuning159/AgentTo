@@ -32,7 +32,7 @@ public final class StructureAwareChunker {
         for (ParsedBlock block : blocks) {
             if (block == null || block.content().isBlank()) continue;
             if (isDocxParagraph(block)) {
-                if (!paragraphGroup.isEmpty() && !sameSection(paragraphGroup.getFirst(), block)) {
+                if (!paragraphGroup.isEmpty() && !sameSection(paragraphGroup.get(0), block)) {
                     flushParagraphGroup(result, paragraphGroup);
                 }
                 if (block.content().length() > maxChars) {
@@ -75,8 +75,8 @@ public final class StructureAwareChunker {
 
     private void flushParagraphGroup(List<RagChunk> result, List<ParsedBlock> group) {
         if (group.isEmpty()) return;
-        ParsedBlock first = group.getFirst();
-        ParsedBlock last = group.getLast();
+        ParsedBlock first = group.get(0);
+        ParsedBlock last = group.get(group.size() - 1);
         Map<String, String> metadata = new LinkedHashMap<>(first.metadata());
         metadata.put("paragraphStart", paragraphNumber(first, "paragraphStart"));
         metadata.put("paragraphEnd", paragraphNumber(last, "paragraphEnd"));

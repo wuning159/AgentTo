@@ -18,11 +18,18 @@
     <description>AgentTo 独立 RAG 服务与技术管理后台</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <spring-ai.version>2.0.0</spring-ai.version>
         <minio.version>8.5.17</minio.version>
         <pdfbox.version>3.0.5</pdfbox.version>
         <poi.version>5.4.1</poi.version>
+        <!-- JaCoCo 核心包清单：后续 Task 新增的包一加入就有覆盖率约束 -->
+        <coverage.core.includes>
+            com/agentto/rag/routing/**,
+            com/agentto/rag/evidence/**,
+            com/agentto/rag/citation/**,
+            com/agentto/rag/query/**
+        </coverage.core.includes>
     </properties>
 
     <dependencyManagement>
@@ -107,6 +114,21 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+                <executions>
+                    <execution>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report-and-check</id>
+                        <phase>verify</phase>
+                        <goals><goal>report</goal><goal>check</goal></goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

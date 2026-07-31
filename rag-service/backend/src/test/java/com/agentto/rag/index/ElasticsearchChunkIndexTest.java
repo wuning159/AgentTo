@@ -50,10 +50,10 @@ class ElasticsearchChunkIndexTest {
                 && body.contains("\"embedding\":[0.1,0.2,0.3]"));
         assertThat(requests).anyMatch(body -> body.contains("\"multi_match\"") && body.contains("预算"));
         assertThat(requests).anyMatch(body -> body.contains("\"knn\"") && body.contains("query_vector"));
-        assertThat(keyword.getFirst().chunkId()).isEqualTo("chunk-keyword");
-        assertThat(keyword.getFirst().score()).isEqualTo(8.2);
-        assertThat(vector.getFirst().chunkId()).isEqualTo("chunk-vector");
-        assertThat(vector.getFirst().score()).isEqualTo(0.91);
+        assertThat(keyword.get(0).chunkId()).isEqualTo("chunk-keyword");
+        assertThat(keyword.get(0).score()).isEqualTo(8.2);
+        assertThat(vector.get(0).chunkId()).isEqualTo("chunk-vector");
+        assertThat(vector.get(0).score()).isEqualTo(0.91);
     }
 
     private void handle(HttpExchange exchange, List<String> requests) throws IOException {

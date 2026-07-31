@@ -27,7 +27,7 @@ class HybridRetrievalServiceTest {
         assertThat(response.fallbackReason()).isNull();
         assertThat(response.candidates()).extracting(RetrievalCandidate::chunkId)
                 .containsExactly("chunk-b", "chunk-c", "chunk-a");
-        RetrievalCandidate first = response.candidates().getFirst();
+        RetrievalCandidate first = response.candidates().get(0);
         assertThat(first.keywordRank()).isEqualTo(2);
         assertThat(first.vectorRank()).isEqualTo(1);
         assertThat(first.rrfRank()).isEqualTo(1);

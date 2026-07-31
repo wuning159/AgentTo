@@ -115,8 +115,8 @@ class DocumentParserTest {
                 .parse(new ByteArrayInputStream(bytes), "policy.pdf");
 
         assertThat(blocks).hasSize(1);
-        assertThat(blocks.getFirst().content()).contains("AgentTo policy page one");
-        assertThat(blocks.getFirst().metadata()).containsEntry("page", "1");
+        assertThat(blocks.get(0).content()).contains("AgentTo policy page one");
+        assertThat(blocks.get(0).metadata()).containsEntry("page", "1");
     }
 
     @Test
@@ -138,8 +138,8 @@ class DocumentParserTest {
                 .parse(new ByteArrayInputStream(bytes), "职责.xlsx");
 
         assertThat(blocks).hasSize(1);
-        assertThat(blocks.getFirst().content()).contains("部门：法务部", "职责：合同审查");
-        assertThat(blocks.getFirst().metadata())
+        assertThat(blocks.get(0).content()).contains("部门：法务部", "职责：合同审查");
+        assertThat(blocks.get(0).metadata())
                 .containsEntry("sheet", "职责清单")
                 .containsEntry("rowStart", "2")
                 .containsEntry("rowEnd", "2");

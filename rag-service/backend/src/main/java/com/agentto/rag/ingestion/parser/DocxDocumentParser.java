@@ -94,7 +94,7 @@ public class DocxDocumentParser implements DocumentParser {
     }
 
     private void updateHeadingPath(List<String> path, int level, String title) {
-        while (path.size() >= level) path.removeLast();
+        while (path.size() >= level) path.remove(path.size() - 1);
         while (path.size() < level - 1) path.add("");
         path.add(title);
     }

@@ -61,7 +61,7 @@ class TeiClientTest {
 
         assertThat(result).extracting(RerankScore::originalIndex).containsExactly(1, 0);
         assertThat(result).extracting(RerankScore::rank).containsExactly(1, 2);
-        assertThat(result.getFirst().score()).isEqualTo(0.91);
+        assertThat(result.get(0).score()).isEqualTo(0.91);
     }
 
     private int serve(String path, String response) throws IOException {
