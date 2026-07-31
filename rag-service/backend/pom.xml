@@ -74,6 +74,11 @@
             <artifactId>spring-ai-model</artifactId>
         </dependency>
         <dependency>
+            <!-- Spring AI 2.0 起 ChatClient 从 spring-ai-model 拆分为独立模块 -->
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-client-chat</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
