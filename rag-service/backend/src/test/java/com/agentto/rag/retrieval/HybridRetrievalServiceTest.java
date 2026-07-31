@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -170,6 +171,24 @@ class HybridRetrievalServiceTest {
         assertThat(progress.events).doesNotContain("DEGRADED:EMBEDDING", "SKIPPED:VECTOR");
     }
 
+    @Test
+    void passesScopeToBothIndexSearchesWhenRequestHasScope() {
+        ScopeRecordingIndex index = new ScopeRecordingIndex();
+        HybridRetrievalService service = new HybridRetrievalService(
+                new FixedEmbedding(), index, new FixedRerank(), new RecordingTraceRecorder(), new RrfFusion(60));
+        SearchScope scope = new SearchScope(Set.of(101L, 102L));
+
+        RetrievalResponse response = service.search(
+                new RetrievalRequest("预算如何审查", 20, 20, 20, 10, 3).withScope(scope));
+
+        // 关键词与向量检索均使用同一知识库范围（多租户隔离边界）
+        assertThat(index.keywordScopes).containsExactly(scope);
+        assertThat(index.vectorScopes).containsExactly(scope);
+        // 范围只影响召回，后续阶段结果与无范围时一致
+        assertThat(response.candidates()).extracting(RetrievalCandidate::chunkId)
+                .containsExactly("chunk-b", "chunk-c", "chunk-a");
+    }
+
     private static final class FixedEmbedding implements EmbeddingService {
         @Override public List<float[]> embed(List<String> texts) { return List.of(new float[] { 1, 0, 0 }); }
         @Override public boolean healthy() { return true; }
@@ -236,6 +255,32 @@ class HybridRetrievalServiceTest {
         private IndexSearchHit hit(String id, String content, double score) {
             return new IndexSearchHit(id, content, "制度", 1L, 2L, 1L, 0, score, Map.of("page", "1"));
         }
+    }
+
+    /** 记录范围参数的索引桩：断言关键词/向量检索均收到同一 scope */
+    private static final class ScopeRecordingIndex implements ChunkIndex {
+        private final FixedIndex delegate = new FixedIndex();
+        private final List<SearchScope> keywordScopes = new ArrayList<>();
+        private final List<SearchScope> vectorScopes = new ArrayList<>();
+
+        @Override public void ensureIndex() { }
+        @Override public void replaceVersionChunks(Long versionId, List<IndexedChunk> chunks) { }
+        @Override public List<IndexSearchHit> keywordSearch(String query, SearchScope scope, int limit) {
+            keywordScopes.add(scope);
+            return delegate.keywordSearch(query, limit);
+        }
+        @Override public List<IndexSearchHit> vectorSearch(float[] queryVector, SearchScope scope, int limit) {
+            vectorScopes.add(scope);
+            return delegate.vectorSearch(queryVector, limit);
+        }
+        @Override @Deprecated public List<IndexSearchHit> keywordSearch(String query, int limit) {
+            throw new AssertionError("不应调用无范围的关键词检索");
+        }
+        @Override @Deprecated public List<IndexSearchHit> vectorSearch(float[] queryVector, int limit) {
+            throw new AssertionError("不应调用无范围的向量检索");
+        }
+        @Override public boolean healthy() { return true; }
+        @Override public String indexVersion() { return "test"; }
     }
 
     private static final class VectorFailingIndex implements ChunkIndex {

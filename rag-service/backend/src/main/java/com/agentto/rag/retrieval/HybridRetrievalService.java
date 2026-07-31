@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.agentto.rag.embedding.EmbeddingService;
 import com.agentto.rag.index.ChunkIndex;
 import com.agentto.rag.index.IndexSearchHit;
+import com.agentto.rag.index.SearchScope;
 import com.agentto.rag.observability.TechnicalStageDetail;
 
 @Service
@@ -73,7 +74,7 @@ public class HybridRetrievalService {
         long keywordStarted = System.nanoTime();
         List<RetrievalCandidate> keyword;
         try {
-            keyword = toCandidates(chunkIndex.keywordSearch(query, request.keywordLimit()), true);
+            keyword = toCandidates(keywordSearch(query, request.scope(), request.keywordLimit()), true);
         } catch (RuntimeException exception) {
             long elapsed = elapsedMs(keywordStarted);
             reporter.failed(RetrievalStage.KEYWORD, failureMessage(exception));
@@ -123,7 +124,7 @@ public class HybridRetrievalService {
             Instant vectorAt = Instant.now();
             long vectorStarted = System.nanoTime();
             try {
-                vector = toCandidates(chunkIndex.vectorSearch(queryVector, request.vectorLimit()), false);
+                vector = toCandidates(vectorSearch(queryVector, request.scope(), request.vectorLimit()), false);
             } catch (RuntimeException exception) {
                 long elapsed = elapsedMs(vectorStarted);
                 reporter.failed(RetrievalStage.VECTOR, failureMessage(exception));
@@ -264,6 +265,32 @@ public class HybridRetrievalService {
     private String failureMessage(RuntimeException exception) {
         String message = exception.getMessage();
         return message == null || message.isBlank() ? exception.getClass().getSimpleName() : message;
+    }
+
+    /**
+     * 关键词检索：带知识库范围时使用限定检索，否则使用全量检索（兼容旧调用）。
+     *
+     * @param query 查询文本
+     * @param scope 知识库范围，可为 null
+     * @param limit 最大返回数量
+     * @return 命中结果
+     */
+    private List<IndexSearchHit> keywordSearch(String query, SearchScope scope, int limit) {
+        return scope == null ? chunkIndex.keywordSearch(query, limit)
+                : chunkIndex.keywordSearch(query, scope, limit);
+    }
+
+    /**
+     * 向量检索：带知识库范围时使用限定检索，否则使用全量检索（兼容旧调用）。
+     *
+     * @param queryVector 查询向量
+     * @param scope       知识库范围，可为 null
+     * @param limit       最大返回数量
+     * @return 命中结果
+     */
+    private List<IndexSearchHit> vectorSearch(float[] queryVector, SearchScope scope, int limit) {
+        return scope == null ? chunkIndex.vectorSearch(queryVector, limit)
+                : chunkIndex.vectorSearch(queryVector, scope, limit);
     }
 
     private List<RetrievalCandidate> toCandidates(List<IndexSearchHit> hits, boolean keyword) {
