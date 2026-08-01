@@ -44,6 +44,13 @@ public class ElasticsearchKnowledgeBaseProfileIndex implements KnowledgeBaseProf
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
+    /**
+     * 注入构造器：从配置读取 Elasticsearch 连接参数。
+     *
+     * @param properties  Elasticsearch 配置
+     * @param objectMapper JSON 序列化器
+     */
+    @org.springframework.beans.factory.annotation.Autowired
     public ElasticsearchKnowledgeBaseProfileIndex(
             com.agentto.rag.index.ElasticsearchProperties properties, ObjectMapper objectMapper) {
         this(properties.url(), properties.username(), properties.password(),
@@ -69,6 +76,8 @@ public class ElasticsearchKnowledgeBaseProfileIndex implements KnowledgeBaseProf
         if (accessibleKnowledgeBaseIds.isEmpty()) {
             return List.of();
         }
+        // 惰性确保画像索引存在，避免全新 Elasticsearch 环境下查询直接失败
+        ensureIndex();
         Map<String, Object> knn = new LinkedHashMap<>();
         knn.put("field", "embedding");
         knn.put("query_vector", queryVector);
@@ -94,6 +103,37 @@ public class ElasticsearchKnowledgeBaseProfileIndex implements KnowledgeBaseProf
         } catch (Exception exception) {
             throw new IllegalStateException("画像检索响应格式不正确", exception);
         }
+    }
+
+    /**
+     * 确保画像索引存在（幂等）。
+     *
+     * <p>索引缺失时创建，mapping 与分块索引保持一致：
+     * knowledge_base_id 为 long，name/description 使用 IK 分词，
+     * embedding 为 dense_vector（cosine 相似度）。
+     * 创建失败（非 404 的 HEAD 错误或 PUT 失败）时抛出异常，由调用方决定降级策略。
+     */
+    public void ensureIndex() {
+        HttpResponse<String> head = send("HEAD", "/" + profileIndex, null, "application/json");
+        if (head.statusCode() == 200) {
+            return;
+        }
+        if (head.statusCode() != 404) {
+            throw httpFailure("检查画像索引", head);
+        }
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("knowledge_base_id", Map.of("type", "long"));
+        properties.put("name", Map.of("type", "text", "analyzer", "ik_max_word",
+                "search_analyzer", "ik_smart"));
+        properties.put("description", Map.of("type", "text", "analyzer", "ik_max_word",
+                "search_analyzer", "ik_smart"));
+        properties.put("embedding", Map.of("type", "dense_vector", "dims", dimensions,
+                "index", true, "similarity", "cosine"));
+        Map<String, Object> mapping = Map.of(
+                "settings", Map.of("number_of_shards", 1, "number_of_replicas", 0),
+                "mappings", Map.of("dynamic", "strict", "properties", properties));
+        HttpResponse<String> created = sendJson("PUT", "/" + profileIndex, mapping);
+        requireSuccess("创建画像索引", created);
     }
 
     @Override
@@ -136,6 +176,12 @@ public class ElasticsearchKnowledgeBaseProfileIndex implements KnowledgeBaseProf
             throw new IllegalStateException(action + "失败: HTTP " + response.statusCode()
                     + " " + response.body());
         }
+    }
+
+    private IllegalStateException httpFailure(String operation, HttpResponse<String> response) {
+        String body = response.body() == null ? "" : response.body();
+        return new IllegalStateException(operation + "失败，HTTP " + response.statusCode() + "："
+                + body.substring(0, Math.min(500, body.length())));
     }
 
     private String json(Object value) {

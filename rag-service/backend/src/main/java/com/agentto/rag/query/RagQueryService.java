@@ -122,7 +122,7 @@ public class RagQueryService {
 
         // RETRIEVE_1 + ASSESS_1：首次检索并评估证据
         AttemptResult first = executeAttempt(command.query(), route, scope, 1, command.finalLimit(),
-                collector);
+                command.clientAppId(), collector);
         List<QueryAttempt> attempts = new ArrayList<>();
         attempts.add(first.attempt());
         if (first.assessment().decision() == EvidenceDecision.SUFFICIENT) {
@@ -147,7 +147,7 @@ public class RagQueryService {
 
         // RETRIEVE_2 + ASSESS_2：改写后二次检索
         AttemptResult second = executeAttempt(rewritten.get(), route, scope, 2, command.finalLimit(),
-                collector);
+                command.clientAppId(), collector);
         attempts.add(second.attempt());
         if (second.assessment().decision() != EvidenceDecision.SUFFICIENT) {
             return finish(collector,
@@ -170,12 +170,13 @@ public class RagQueryService {
      * @return 尝试结果（快照、评估、Trace ID）
      */
     private AttemptResult executeAttempt(String query, KnowledgeBaseRoute route, SearchScope scope,
-            int attemptNo, int finalLimit, FlowTraceCollector collector) {
+            int attemptNo, int finalLimit, Long clientAppId, FlowTraceCollector collector) {
         long startNanos = System.nanoTime();
         RetrievalRequest request = new RetrievalRequest(query, KEYWORD_LIMIT, VECTOR_LIMIT,
                 FUSION_LIMIT, RERANK_LIMIT, finalLimit)
                 .withScope(scope)
-                .withAttemptNo(attemptNo);
+                .withAttemptNo(attemptNo)
+                .withRequesterId(clientAppId);
         RetrievalResponse response = retrievalService.search(request);
         EvidenceAssessment assessment = evidenceGate.assess(route, response.candidates());
         collector.evidenceGate(attemptNo, assessment, response.candidates().size(),

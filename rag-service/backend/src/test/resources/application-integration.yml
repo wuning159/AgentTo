@@ -1,0 +1,37 @@
+# 集成测试 profile：Testcontainers 提供真实 MySQL 与 Elasticsearch，
+# 外部模型（TEI Embedding/Rerank、DeepSeek）使用确定性本地 stub 替代。
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    table: rag_flyway_schema_history
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-migration-naming: true
+
+rag:
+  auth:
+    bootstrap-enabled: false
+  client:
+    key-pepper: integration-test-pepper
+  async:
+    enabled: false
+  storage:
+    enabled: false
+  elasticsearch:
+    enabled: true
+    # 每个测试类使用独立索引名前缀，避免容器共享时的数据串扰
+    index: agentto-rag-it-chunks-v1
+    dimensions: 128
+  tei:
+    embedding-enabled: false
+    rerank-enabled: false
+  routing:
+    # 与生产默认值一致：ES cosine 归一化后正交向量恒为 0.5，0.05 会让无关查询误路由
+    verification-threshold: 0.55
+  evidence:
+    minimum-score: 0.05
+    minimum-count: 1
+  answer:
+    enabled: false
