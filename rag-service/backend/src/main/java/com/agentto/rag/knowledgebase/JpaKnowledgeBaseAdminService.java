@@ -2,11 +2,13 @@ package com.agentto.rag.knowledgebase;
 
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agentto.rag.client.ClientApplication;
 import com.agentto.rag.client.ClientApplicationRepository;
+import com.agentto.rag.common.api.BusinessException;
 
 /**
  * 知识库管理服务 JPA 实现。
@@ -53,9 +55,13 @@ public class JpaKnowledgeBaseAdminService implements KnowledgeBaseAdminService {
     @Override
     @Transactional
     public KnowledgeBase createKnowledgeBase(String name, String description, String visibility, Long ownerAppId) {
+        if (ownerAppId == null) {
+            throw new BusinessException("VALIDATION_ERROR", "所有者应用 ID 不能为空", HttpStatus.BAD_REQUEST);
+        }
         // 验证所有者应用存在
         ClientApplication owner = clientApplicationRepository.findById(ownerAppId)
-                .orElseThrow(() -> new IllegalArgumentException("所有者应用不存在: " + ownerAppId));
+                .orElseThrow(() -> new BusinessException("OWNER_NOT_FOUND", "所有者应用不存在: " + ownerAppId,
+                        HttpStatus.BAD_REQUEST));
 
         // 生成知识库唯一标识
         String kbUid = "kb-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
@@ -74,7 +80,8 @@ public class JpaKnowledgeBaseAdminService implements KnowledgeBaseAdminService {
     @Transactional
     public KnowledgeBase updateProfile(String kbUid, String description) {
         KnowledgeBase kb = knowledgeBaseRepository.findByKbUid(kbUid)
-                .orElseThrow(() -> new IllegalArgumentException("知识库不存在: " + kbUid));
+                .orElseThrow(() -> new BusinessException("KNOWLEDGE_BASE_NOT_FOUND", "知识库不存在: " + kbUid,
+                        HttpStatus.NOT_FOUND));
 
         kb.setDescription(description);
         kb.incrementProfileVersion();
@@ -90,19 +97,23 @@ public class JpaKnowledgeBaseAdminService implements KnowledgeBaseAdminService {
     @Transactional
     public void addGrant(String kbUid, String appUid) {
         KnowledgeBase kb = knowledgeBaseRepository.findByKbUid(kbUid)
-                .orElseThrow(() -> new IllegalArgumentException("知识库不存在: " + kbUid));
+                .orElseThrow(() -> new BusinessException("KNOWLEDGE_BASE_NOT_FOUND", "知识库不存在: " + kbUid,
+                        HttpStatus.NOT_FOUND));
 
         ClientApplication grantee = clientApplicationRepository.findByAppUid(appUid)
-                .orElseThrow(() -> new IllegalArgumentException("调用方应用不存在: " + appUid));
+                .orElseThrow(() -> new BusinessException("APP_NOT_FOUND", "调用方应用不存在: " + appUid,
+                        HttpStatus.NOT_FOUND));
 
         // 私有知识库不能添加共享授权
         if (!kb.isShared()) {
-            throw new IllegalStateException("私有知识库不能添加共享授权: " + kbUid);
+            throw new BusinessException("STATE_CONFLICT", "私有知识库不能添加共享授权: " + kbUid,
+                    HttpStatus.CONFLICT);
         }
 
         // 授权不可重复
         if (grantRepository.existsByKnowledgeBaseIdAndClientAppId(kb.getId(), grantee.getId())) {
-            throw new IllegalStateException("授权已存在: kbUid=" + kbUid + ", appUid=" + appUid);
+            throw new BusinessException("STATE_CONFLICT", "授权已存在: kbUid=" + kbUid + ", appUid=" + appUid,
+                    HttpStatus.CONFLICT);
         }
 
         KnowledgeBaseGrant grant = new KnowledgeBaseGrant(kb.getId(), grantee.getId());
@@ -117,10 +128,12 @@ public class JpaKnowledgeBaseAdminService implements KnowledgeBaseAdminService {
     @Transactional
     public void removeGrant(String kbUid, String appUid) {
         KnowledgeBase kb = knowledgeBaseRepository.findByKbUid(kbUid)
-                .orElseThrow(() -> new IllegalArgumentException("知识库不存在: " + kbUid));
+                .orElseThrow(() -> new BusinessException("KNOWLEDGE_BASE_NOT_FOUND", "知识库不存在: " + kbUid,
+                        HttpStatus.NOT_FOUND));
 
         ClientApplication grantee = clientApplicationRepository.findByAppUid(appUid)
-                .orElseThrow(() -> new IllegalArgumentException("调用方应用不存在: " + appUid));
+                .orElseThrow(() -> new BusinessException("APP_NOT_FOUND", "调用方应用不存在: " + appUid,
+                        HttpStatus.NOT_FOUND));
 
         grantRepository.deleteByKnowledgeBaseIdAndClientAppId(kb.getId(), grantee.getId());
     }

@@ -14,8 +14,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.agentto.rag.common.api.BusinessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -193,6 +195,10 @@ public class ElasticsearchChunkIndex implements ChunkIndex {
 
     private List<IndexSearchHit> search(Map<String, Object> request) {
         HttpResponse<String> response = sendJson("POST", "/" + index + "/_search", request);
+        if (response.statusCode() == 404 && response.body() != null
+                && response.body().contains("index_not_found_exception")) {
+            throw new BusinessException("INDEX_NOT_READY", "检索索引尚未创建，请先导入文档", HttpStatus.SERVICE_UNAVAILABLE);
+        }
         requireSuccess("执行检索", response);
         try {
             List<IndexSearchHit> result = new ArrayList<>();

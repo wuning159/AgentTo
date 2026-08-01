@@ -1,6 +1,7 @@
 package com.agentto.rag.index;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -12,7 +13,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
+import com.agentto.rag.common.api.BusinessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -56,6 +59,25 @@ class ElasticsearchChunkIndexTest {
         assertThat(vector.get(0).score()).isEqualTo(0.91);
     }
 
+    @Test
+    void missingIndexMapsToBusinessException503() throws Exception {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/rag-test", exchange -> handle(exchange, new CopyOnWriteArrayList<>()));
+        server.start();
+
+        ElasticsearchChunkIndex index = new ElasticsearchChunkIndex(
+                "http://127.0.0.1:" + server.getAddress().getPort(), "", "", "rag-test", 3,
+                Duration.ofSeconds(2), new ObjectMapper());
+
+        assertThatThrownBy(() -> index.keywordSearch("probe-missing", 5))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(exception -> {
+                    BusinessException business = (BusinessException) exception;
+                    assertThat(business.status()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(business.code()).isEqualTo("INDEX_NOT_READY");
+                });
+    }
+
     private void handle(HttpExchange exchange, List<String> requests) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
@@ -70,6 +92,9 @@ class ElasticsearchChunkIndexTest {
             respond(exchange, 200, "{\"deleted\":0}");
         } else if (path.endsWith("/_bulk")) {
             respond(exchange, 200, "{\"errors\":false,\"items\":[]}");
+        } else if (path.endsWith("/_search") && body.contains("\"probe-missing\"")) {
+            respond(exchange, 404, "{\"error\":{\"root_cause\":[{\"type\":\"index_not_found_exception\"," +
+                    "\"reason\":\"no such index [rag-test]\"}],\"type\":\"index_not_found_exception\"},\"status\":404}");
         } else if (path.endsWith("/_search") && body.contains("\"knn\"")) {
             respond(exchange, 200, hit("chunk-vector", 0.91, "向量内容"));
         } else if (path.endsWith("/_search")) {

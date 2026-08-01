@@ -19,6 +19,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import com.agentto.rag.knowledgebase.KnowledgeBaseNotWritableException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -101,6 +103,28 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiResponse<Void>> handleTypeMismatch(Exception exception, HttpServletRequest request) {
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error("BAD_REQUEST", "请求参数不合法：" + exception.getMessage(),
+                        TraceIdFilter.current(request)));
+    }
+
+    /**
+     * 业务层参数类校验错误（如资源不存在、参数非法）返回 400，而非 500。
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException exception,
+            HttpServletRequest request) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error("INVALID_ARGUMENT", "请求参数不合法：" + exception.getMessage(),
+                        TraceIdFilter.current(request)));
+    }
+
+    /**
+     * 知识库不可写（不存在或已禁用）返回 400，而非 500。
+     */
+    @ExceptionHandler(KnowledgeBaseNotWritableException.class)
+    ResponseEntity<ApiResponse<Void>> handleKbNotWritable(KnowledgeBaseNotWritableException exception,
+            HttpServletRequest request) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error("KNOWLEDGE_BASE_NOT_WRITABLE", exception.getMessage(),
                         TraceIdFilter.current(request)));
     }
 

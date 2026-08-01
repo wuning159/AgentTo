@@ -83,4 +83,15 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().code()).isEqualTo("BAD_REQUEST");
     }
+
+    @Test
+    void illegalArgumentReturns400() {
+        IllegalArgumentException exception = new IllegalArgumentException("所有者应用不存在: 99");
+        ResponseEntity<ApiResponse<Void>> response = handler.handleIllegalArgument(exception,
+                new MockHttpServletRequest());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().code()).isEqualTo("INVALID_ARGUMENT");
+        assertThat(response.getBody().message()).contains("所有者应用不存在");
+    }
 }

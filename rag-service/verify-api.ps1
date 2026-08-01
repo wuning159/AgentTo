@@ -1,4 +1,4 @@
-# AgentTo RAG 服务全链路接口验证：任何响应都不得为 500
+﻿# AgentTo RAG 服务全链路接口验证：任何响应都不得为 500
 # PS 5.1 调用外部程序会剥离参数中的双引号，所有 JSON body 一律写临时文件，用 -d @file 传递
 $ErrorActionPreference = 'Stop'
 $base = 'http://127.0.0.1:18473'

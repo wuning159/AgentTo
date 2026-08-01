@@ -16,8 +16,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.http.HttpStatus;
+
 import com.agentto.rag.client.ClientApplication;
 import com.agentto.rag.client.ClientApplicationRepository;
+import com.agentto.rag.common.api.BusinessException;
 
 /**
  * 知识库管理服务测试。
@@ -46,8 +49,13 @@ class KnowledgeBaseAdminServiceTest {
         when(clientApplicationRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.createKnowledgeBase("测试KB", "描述", "PRIVATE", 999L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("所有者应用不存在");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("所有者应用不存在")
+                .satisfies(exception -> {
+                    BusinessException business = (BusinessException) exception;
+                    assertThat(business.status()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(business.code()).isEqualTo("OWNER_NOT_FOUND");
+                });
 
         verify(knowledgeBaseRepository, never()).save(any());
     }
@@ -101,8 +109,13 @@ class KnowledgeBaseAdminServiceTest {
         when(knowledgeBaseRepository.findByKbUid("not-exist")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.updateProfile("not-exist", "描述"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("知识库不存在");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("知识库不存在")
+                .satisfies(exception -> {
+                    BusinessException business = (BusinessException) exception;
+                    assertThat(business.status()).isEqualTo(HttpStatus.NOT_FOUND);
+                    assertThat(business.code()).isEqualTo("KNOWLEDGE_BASE_NOT_FOUND");
+                });
     }
 
     /**
@@ -140,8 +153,13 @@ class KnowledgeBaseAdminServiceTest {
         when(clientApplicationRepository.findByAppUid("app-b")).thenReturn(Optional.of(grantee));
 
         assertThatThrownBy(() -> service.addGrant("kb-002", "app-b"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("私有知识库");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("私有知识库")
+                .satisfies(exception -> {
+                    BusinessException business = (BusinessException) exception;
+                    assertThat(business.status()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(business.code()).isEqualTo("STATE_CONFLICT");
+                });
 
         verify(grantRepository, never()).save(any());
     }
@@ -162,8 +180,13 @@ class KnowledgeBaseAdminServiceTest {
         when(grantRepository.existsByKnowledgeBaseIdAndClientAppId(1L, 20L)).thenReturn(true);
 
         assertThatThrownBy(() -> service.addGrant("kb-001", "app-b"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("已存在");
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("已存在")
+                .satisfies(exception -> {
+                    BusinessException business = (BusinessException) exception;
+                    assertThat(business.status()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(business.code()).isEqualTo("STATE_CONFLICT");
+                });
 
         verify(grantRepository, never()).save(any());
     }
