@@ -15,9 +15,11 @@ import org.junit.jupiter.api.Test;
 import com.agentto.rag.citation.Citation;
 import com.agentto.rag.citation.CitationValidator;
 import com.agentto.rag.citation.GeneratedAnswer;
+import com.agentto.rag.evaluation.RagFailureCode;
 import com.agentto.rag.evidence.EvidenceGate;
 import com.agentto.rag.evidence.EvidencePolicyProperties;
 import com.agentto.rag.index.SearchScope;
+import com.agentto.rag.observability.ExecutionEvent;
 import com.agentto.rag.retrieval.DedupeStatus;
 import com.agentto.rag.retrieval.HybridRetrievalService;
 import com.agentto.rag.retrieval.RetrievalCandidate;
@@ -42,6 +44,7 @@ class RagQueryServiceTest {
     private StubRetrieval retrieval;
     private StubQueryRewriter rewriter;
     private StubAnswerGenerator generator;
+    private StubFlowTraceRecorder traceRecorder;
     private RagQueryService service;
 
     @BeforeEach
@@ -53,6 +56,7 @@ class RagQueryServiceTest {
         rewriter = new StubQueryRewriter(() -> Optional.of("预算审批流程"));
         generator = new StubAnswerGenerator(() -> new GeneratedAnswer("预算审批分为三步。",
                 List.of(new Citation("c1", "预算审批分为三步"))));
+        traceRecorder = new StubFlowTraceRecorder();
         service = newService();
     }
 
@@ -72,6 +76,25 @@ class RagQueryServiceTest {
         assertThat(retrieval.requests().get(0).attemptNo()).isEqualTo(1);
         // 生成器收到的是路由后的查询
         assertThat(generator.receivedQueries()).containsExactly("预算如何审批");
+        // 编排 Trace：决策、调用方、生效查询、路由画像和阶段事件完整
+        assertThat(traceRecorder.records()).hasSize(1);
+        QueryFlowTrace trace = traceRecorder.records().get(0);
+        assertThat(trace.clientAppId()).isEqualTo(10L);
+        assertThat(trace.decision()).isEqualTo(RagQueryDecision.ANSWERED);
+        assertThat(trace.routingDecision()).isEqualTo(RoutingDecision.ROUTED);
+        assertThat(trace.effectiveQuery()).isEqualTo("预算如何审批");
+        assertThat(trace.profileShortlist()).containsExactly(101L, 102L);
+        assertThat(trace.selectedKnowledgeBases()).hasSize(2);
+        assertThat(trace.attemptCount()).isEqualTo(1);
+        assertThat(trace.traceUids()).containsExactly("trace-1");
+        assertThat(trace.citationValid()).isTrue();
+        assertThat(trace.rewriteAttempted()).isFalse();
+        assertThat(trace.failureCode()).isNull();
+        assertThat(trace.events()).extracting(ExecutionEvent::stage).contains(
+                QueryFlowStage.ROUTE_PROFILE.name(), QueryFlowStage.ROUTE_VERIFY.name(),
+                QueryFlowStage.EVIDENCE_GATE.name(), QueryFlowStage.CITATION_VALIDATE.name(),
+                QueryFlowStage.COMPLETE.name());
+        assertThat(trace.totalMs()).isGreaterThanOrEqualTo(0);
     }
 
     /** 路由无结果：不调用检索、改写、生成，直接拒答 */
@@ -88,6 +111,15 @@ class RagQueryServiceTest {
         assertThat(retrieval.requests()).isEmpty();
         assertThat(rewriter.receivedQueries()).isEmpty();
         assertThat(generator.receivedQueries()).isEmpty();
+        // 编排 Trace：记录路由拒答，无检索/改写/校验阶段
+        assertThat(traceRecorder.records()).hasSize(1);
+        QueryFlowTrace trace = traceRecorder.records().get(0);
+        assertThat(trace.decision()).isEqualTo(RagQueryDecision.NO_RELEVANT_KNOWLEDGE_BASE);
+        assertThat(trace.routingDecision()).isEqualTo(RoutingDecision.NO_RELEVANT_KNOWLEDGE_BASE);
+        assertThat(trace.attemptCount()).isZero();
+        assertThat(trace.evidenceDecision()).isNull();
+        assertThat(trace.events()).extracting(ExecutionEvent::stage)
+                .doesNotContain(QueryFlowStage.EVIDENCE_GATE.name());
     }
 
     /** 首次证据不足 + 改写有效：只重试一次，第二次用改写后的查询 */
@@ -114,6 +146,15 @@ class RagQueryServiceTest {
         assertThat(generator.receivedQueries()).containsExactly("预算审批流程");
         assertThat(response.attempts().get(0).attemptNo()).isEqualTo(1);
         assertThat(response.attempts().get(1).attemptNo()).isEqualTo(2);
+        // 编排 Trace：两次尝试、改写生效、生效查询为改写后查询
+        assertThat(traceRecorder.records()).hasSize(1);
+        QueryFlowTrace trace = traceRecorder.records().get(0);
+        assertThat(trace.attemptCount()).isEqualTo(2);
+        assertThat(trace.traceUids()).containsExactly("trace-1", "trace-2");
+        assertThat(trace.rewriteAttempted()).isTrue();
+        assertThat(trace.effectiveQuery()).isEqualTo("预算审批流程");
+        assertThat(trace.events()).extracting(ExecutionEvent::stage)
+                .contains(QueryFlowStage.QUERY_REWRITE.name());
     }
 
     /** 二次检索证据仍不足：返回 INSUFFICIENT_EVIDENCE，不调用生成器 */
@@ -192,6 +233,9 @@ class RagQueryServiceTest {
         assertThat(response.decision()).isEqualTo(RagQueryDecision.GENERATION_UNAVAILABLE);
         assertThat(response.answer()).isNull();
         assertThat(response.citations()).isEmpty();
+        // 编排 Trace：故障码为 MODEL_FAILURE
+        assertThat(traceRecorder.records()).hasSize(1);
+        assertThat(traceRecorder.records().get(0).failureCode()).isEqualTo(RagFailureCode.MODEL_FAILURE);
     }
 
     /** 模型返回空答案：视为模型判定证据不足 */
@@ -212,7 +256,7 @@ class RagQueryServiceTest {
     private RagQueryService newService() {
         return new RagQueryService(router, retrieval,
                 new EvidenceGate(new EvidencePolicyProperties()), rewriter,
-                generator, new CitationValidator());
+                generator, new CitationValidator(), traceRecorder);
     }
 
     /** 构造已路由的默认路由结果 */
@@ -322,6 +366,22 @@ class RagQueryServiceTest {
         public GeneratedAnswer generate(String query, List<RetrievalCandidate> evidence) {
             receivedQueries.add(query);
             return responder.get();
+        }
+    }
+
+    /** 桩编排 Trace 记录器：保存全部记录供测试断言 */
+    static final class StubFlowTraceRecorder implements QueryFlowTraceRecorder {
+
+        private final List<QueryFlowTrace> records = new ArrayList<>();
+
+        /** 返回全部收到的编排 Trace（测试断言用） */
+        List<QueryFlowTrace> records() {
+            return records;
+        }
+
+        @Override
+        public void record(QueryFlowTrace trace) {
+            records.add(trace);
         }
     }
 }

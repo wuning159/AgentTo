@@ -10,6 +10,14 @@ spring:
     url: ${AGENTTO_DB_URL}
     username: ${AGENTTO_DB_USERNAME}
     password: ${AGENTTO_DB_PASSWORD}
+  ai:
+    openai:
+      # DeepSeek 兼容 OpenAI 协议，通过环境变量注入密钥
+      api-key: ${DEEPSEEK_API_KEY:}
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      chat:
+        options:
+          model: ${DEEPSEEK_MODEL:deepseek-chat}
   jpa:
     open-in-view: false
     hibernate:
@@ -40,6 +48,9 @@ rag:
     bootstrap-username: ${RAG_ADMIN_USERNAME:admin}
     bootstrap-password: ${RAG_ADMIN_PASSWORD:admin123}
     session-hours: ${RAG_ADMIN_SESSION_HOURS:12}
+  answer:
+    # 是否启用答案生成（需要配置 ChatModel，通常为 DeepSeek）
+    enabled: ${RAG_ANSWER_ENABLED:false}
   storage:
     enabled: ${RAG_MINIO_ENABLED:true}
     endpoint: ${AGENTTO_MINIO_URL}

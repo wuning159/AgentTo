@@ -123,7 +123,10 @@ class RagRegressionTest {
                 List.of(101L), List.of(101L), Map.of(101L, 0.9)));
         RagQueryService queryService = new RagQueryService(router,
                 new AlwaysAnsweredRetrieval(), new EvidenceGate(new EvidencePolicyProperties()),
-                new NoOpRewriter(), new AlwaysAnsweredGenerator(), new CitationValidator());
+                new NoOpRewriter(), new AlwaysAnsweredGenerator(), new CitationValidator(),
+                trace -> {
+                    // 评测链路不关心编排 Trace
+                });
         RagEvaluationRunner runner = new RagEvaluationRunner(loader, calculator, queryService);
 
         RagEvaluationRunner.EvaluationReport report = runner.run("classpath:rag-eval/baseline.jsonl");

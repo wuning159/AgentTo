@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sharedEnvironment = Join-Path $root '..\backend\.env.local'
+$sharedEnvironment = Join-Path $root '.env.local'
 if (-not (Test-Path $sharedEnvironment)) {
     throw "Environment file not found: $sharedEnvironment"
 }
