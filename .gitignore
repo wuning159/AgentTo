@@ -21,6 +21,7 @@ rag-service/logs/
 .m2/
 tmp/
 .superpowers/
+.worktrees/
 
 # OS files
 .DS_Store
