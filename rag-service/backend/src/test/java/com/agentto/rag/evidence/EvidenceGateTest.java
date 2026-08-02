@@ -143,6 +143,21 @@ class EvidenceGateTest {
         assertThat(result.reason()).contains("rrf");
     }
 
+    /** rerank 缺失但 rrf 合格时，必须用 rrf 分数判定为证据充足。 */
+    @Test
+    void acceptsEvidenceUsingRrfScoreWhenRerankScoreIsAbsent() {
+        KnowledgeBaseRoute route = routedRoute();
+        List<RetrievalCandidate> candidates = List.of(
+                candidateWithOnlyRrfScore("c1", 0.60),
+                candidateWithOnlyRrfScore("c2", 0.60));
+
+        EvidenceAssessment result = gate.assess(route, candidates);
+
+        assertThat(result.decision()).isEqualTo(EvidenceDecision.SUFFICIENT);
+        assertThat(result.topScore()).isEqualTo(0.60);
+        assertThat(result.reason()).contains("rrf");
+    }
+
     /** 有 rerank 分数时优先使用 */
     @Test
     void prefersRerankScoreWhenAvailable() {
@@ -179,6 +194,13 @@ class EvidenceGateTest {
     private RetrievalCandidate createCandidate(String chunkId, double rerankScore, double rrfScore) {
         return new RetrievalCandidate(chunkId, "内容", "标题", null, null, null, Map.of(),
                 null, null, null, null, rrfScore, null, rerankScore, null, null,
+                null, com.agentto.rag.retrieval.DedupeStatus.KEPT, null);
+    }
+
+    /** 构造只有 rrf 分数的候选，用于验证 rerank 缺失时的降级路径。 */
+    private RetrievalCandidate candidateWithOnlyRrfScore(String chunkId, double rrfScore) {
+        return new RetrievalCandidate(chunkId, "内容", "标题", null, null, null, Map.of(),
+                null, null, null, null, rrfScore, null, null, null, null,
                 null, com.agentto.rag.retrieval.DedupeStatus.KEPT, null);
     }
 }

@@ -1,6 +1,7 @@
 package com.agentto.rag.query;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -248,6 +249,30 @@ class RagQueryServiceTest {
 
         assertThat(response.decision()).isEqualTo(RagQueryDecision.INSUFFICIENT_EVIDENCE);
         assertThat(response.answer()).isNull();
+    }
+
+    /** 命令缺少调用方身份时必须在进入编排前拒绝。 */
+    @Test
+    void rejectsNullClientAppId() {
+        assertThatThrownBy(() -> new RagQueryCommand(null, "预算审批", 8))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("clientAppId 不能为空");
+    }
+
+    /** 命令查询为空白时必须在进入编排前拒绝。 */
+    @Test
+    void rejectsBlankQuery() {
+        assertThatThrownBy(() -> new RagQueryCommand(1L, " ", 8))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("查询不能为空");
+    }
+
+    /** 命令最终证据数量必须为正数。 */
+    @Test
+    void rejectsNonPositiveFinalLimit() {
+        assertThatThrownBy(() -> new RagQueryCommand(1L, "预算审批", 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("finalLimit 必须大于 0");
     }
 
     // --- 辅助方法 ---
