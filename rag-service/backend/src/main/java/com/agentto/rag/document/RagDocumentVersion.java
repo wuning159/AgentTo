@@ -32,6 +32,8 @@ public class RagDocumentVersion {
     private String objectBucket;
     @Column(name = "object_key", nullable = false)
     private String objectKey;
+    @Column(name = "content_asset_id")
+    private Long contentAssetId;
     @Column(name = "processing_status", nullable = false)
     private String processingStatus;
     @Column(name = "chunk_count", nullable = false)
@@ -47,7 +49,7 @@ public class RagDocumentVersion {
     }
 
     private RagDocumentVersion(Long documentId, String filename, String contentType, long fileSize, String sha256,
-            StoredLocation location, Long createdBy) {
+            StoredLocation location, Long contentAssetId, Long createdBy) {
         this.documentId = documentId;
         this.versionNo = 1;
         this.originalFilename = filename;
@@ -56,6 +58,7 @@ public class RagDocumentVersion {
         this.sha256 = sha256;
         this.objectBucket = location.bucket();
         this.objectKey = location.objectKey();
+        this.contentAssetId = contentAssetId;
         this.processingStatus = "QUEUED";
         this.createdBy = createdBy;
         this.createdAt = Instant.now();
@@ -63,8 +66,13 @@ public class RagDocumentVersion {
 
     public static RagDocumentVersion first(Long documentId, String filename, String contentType, long fileSize,
             String sha256, String bucket, String objectKey, Long createdBy) {
+        return first(documentId, filename, contentType, fileSize, sha256, bucket, objectKey, null, createdBy);
+    }
+
+    public static RagDocumentVersion first(Long documentId, String filename, String contentType, long fileSize,
+            String sha256, String bucket, String objectKey, Long contentAssetId, Long createdBy) {
         return new RagDocumentVersion(documentId, filename, contentType, fileSize, sha256,
-                new StoredLocation(bucket, objectKey), createdBy);
+                new StoredLocation(bucket, objectKey), contentAssetId, createdBy);
     }
 
     public void markProcessing() { processingStatus = "PROCESSING"; }
@@ -80,6 +88,7 @@ public class RagDocumentVersion {
     public String getSha256() { return sha256; }
     public String getObjectBucket() { return objectBucket; }
     public String getObjectKey() { return objectKey; }
+    public Long getContentAssetId() { return contentAssetId; }
     public String getProcessingStatus() { return processingStatus; }
     public int getChunkCount() { return chunkCount; }
     public String getIndexVersion() { return indexVersion; }

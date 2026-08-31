@@ -2,13 +2,10 @@ package com.agentto.rag.ingestion;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -41,8 +38,8 @@ import com.agentto.rag.index.SearchScope;
 import com.agentto.rag.knowledgebase.KnowledgeBase;
 import com.agentto.rag.knowledgebase.KnowledgeBaseRepository;
 import com.agentto.rag.observability.TechnicalStageDetail;
-import com.agentto.rag.storage.ObjectStorageService;
-import com.agentto.rag.storage.StoredObject;
+import com.agentto.rag.asset.ContentAssetRepository;
+import com.agentto.rag.storage.InMemoryObjectStorage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ActiveProfiles("test")
@@ -65,6 +62,7 @@ class IngestionOrchestratorTest {
     @Autowired private BlockingEmbedding blockingEmbedding;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private IngestionQueryService ingestionQueryService;
+    @Autowired private ContentAssetRepository contentAssetRepository;
 
     private Long adminId;
     private Long knowledgeBaseId;
@@ -75,6 +73,7 @@ class IngestionOrchestratorTest {
         stageRepository.deleteAll();
         jobRepository.deleteAll();
         versionRepository.deleteAll();
+        contentAssetRepository.deleteAll();
         documentRepository.deleteAll();
         knowledgeBaseRepository.deleteAll();
         sessionRepository.deleteAll();
@@ -176,7 +175,7 @@ class IngestionOrchestratorTest {
 
     @TestConfiguration
     static class FakeAdapterConfiguration {
-        @Bean @Primary FakeStorage fakeStorage() { return new FakeStorage(); }
+        @Bean @Primary InMemoryObjectStorage fakeStorage() { return new InMemoryObjectStorage(); }
         @Bean @Primary BlockingEmbedding fakeEmbedding() { return new BlockingEmbedding(); }
         @Bean @Primary FakeChunkIndex fakeChunkIndex() { return new FakeChunkIndex(); }
     }
@@ -210,17 +209,6 @@ class IngestionOrchestratorTest {
             return texts.stream().map(text -> new float[] { 1, 0, 0 }).toList();
         }
 
-        @Override public boolean healthy() { return true; }
-    }
-
-    static final class FakeStorage implements ObjectStorageService {
-        private final Map<String, byte[]> values = new ConcurrentHashMap<>();
-        @Override public StoredObject put(String objectKey, byte[] content, String contentType) {
-            values.put(objectKey, content.clone()); return new StoredObject("test", objectKey);
-        }
-        @Override public InputStream get(String bucket, String objectKey) {
-            return new ByteArrayInputStream(values.get(objectKey));
-        }
         @Override public boolean healthy() { return true; }
     }
 

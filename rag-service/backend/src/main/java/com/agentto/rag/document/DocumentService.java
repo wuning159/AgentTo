@@ -1,23 +1,16 @@
 package com.agentto.rag.document;
 
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
-import java.util.HexFormat;
-import java.util.Locale;
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.agentto.rag.asset.ContentAsset;
+import com.agentto.rag.asset.ContentAssetService;
+import com.agentto.rag.asset.UploadedDocument;
 import com.agentto.rag.ingestion.IngestionJob;
 import com.agentto.rag.ingestion.IngestionJobRepository;
 import com.agentto.rag.ingestion.parser.DocumentParserFactory;
 import com.agentto.rag.knowledgebase.KnowledgeBaseAdminService;
-import com.agentto.rag.storage.ObjectStorageService;
-import com.agentto.rag.storage.StoredObject;
 
 @Service
 public class DocumentService {
@@ -26,23 +19,26 @@ public class DocumentService {
     private final DocumentVersionRepository versionRepository;
     private final IngestionJobRepository jobRepository;
     private final DocumentParserFactory parserFactory;
-    private final ObjectStorageService storage;
+    private final ContentAssetService contentAssetService;
     private final KnowledgeBaseAdminService knowledgeBaseAdminService;
+    private final TransactionTemplate transactionTemplate;
 
     public DocumentService(DocumentRepository documentRepository, DocumentVersionRepository versionRepository,
-            IngestionJobRepository jobRepository, DocumentParserFactory parserFactory, ObjectStorageService storage,
-            KnowledgeBaseAdminService knowledgeBaseAdminService) {
+            IngestionJobRepository jobRepository, DocumentParserFactory parserFactory,
+            ContentAssetService contentAssetService, KnowledgeBaseAdminService knowledgeBaseAdminService,
+            TransactionTemplate transactionTemplate) {
         this.documentRepository = documentRepository;
         this.versionRepository = versionRepository;
         this.jobRepository = jobRepository;
         this.parserFactory = parserFactory;
-        this.storage = storage;
+        this.contentAssetService = contentAssetService;
         this.knowledgeBaseAdminService = knowledgeBaseAdminService;
+        this.transactionTemplate = transactionTemplate;
     }
 
     /**
      * 上传文档到指定知识库。
-     * 校验知识库存在且处于 ACTIVE 状态后，保存原始文件并创建入库任务。
+     * 校验知识库存在且处于 ACTIVE 状态后，按内容寻址保存原始文件并创建入库任务。
      *
      * @param file            上传文件
      * @param knowledgeBaseId 目标知识库 ID
@@ -50,39 +46,35 @@ public class DocumentService {
      * @return 上传结果
      * @throws KnowledgeBaseNotWritableException 当知识库不存在或已被禁用时抛出
      */
-    @Transactional
     public UploadResult upload(MultipartFile file, Long knowledgeBaseId, Long operatorId) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("上传文件不能为空");
         }
-        // 校验知识库存在且活跃
         knowledgeBaseAdminService.requireActive(knowledgeBaseId);
         String filename = safeFilename(file.getOriginalFilename());
         parserFactory.forFile(filename);
-        byte[] bytes = bytes(file);
-        String sha256 = sha256(bytes);
-        RagDocumentVersion existing = versionRepository.findFirstBySha256OrderByCreatedAtDesc(sha256).orElse(null);
-        if (existing != null) {
-            return UploadResult.duplicate(existing);
-        }
-        String objectKey = objectKey(filename);
-        StoredObject stored = storage.put(objectKey, bytes, file.getContentType());
-
-        RagDocument document = documentRepository.save(RagDocument.manual(filename, null, knowledgeBaseId, operatorId));
-        RagDocumentVersion version = versionRepository.save(RagDocumentVersion.first(document.getId(), filename,
-                file.getContentType(), bytes.length, sha256, stored.bucket(), stored.objectKey(), operatorId));
-        document.setCurrentVersion(version.getId());
-        documentRepository.save(document);
-        IngestionJob job = jobRepository.save(IngestionJob.queued(document.getId(), version.getId()));
-        return UploadResult.created(document.getId(), version.getId(), job.getId(), stored.objectKey());
+        ContentAsset asset = contentAssetService.storeOrReuse(UploadedDocument.from(file));
+        contentAssetService.requireReadyForReference(asset.getId());
+        return persistUpload(filename, file.getContentType(), knowledgeBaseId, operatorId, asset);
     }
 
-    private byte[] bytes(MultipartFile file) {
-        try {
-            return file.getBytes();
-        } catch (IOException exception) {
-            throw new IllegalArgumentException("读取上传文件失败", exception);
-        }
+    private UploadResult persistUpload(String filename, String contentType, Long knowledgeBaseId, Long operatorId,
+            ContentAsset asset) {
+        return transactionTemplate.execute(status -> {
+            RagDocumentVersion existing = versionRepository.findFirstBySha256OrderByCreatedAtDesc(asset.getSha256())
+                    .orElse(null);
+            if (existing != null) {
+                return UploadResult.duplicate(existing);
+            }
+            RagDocument document = documentRepository.save(RagDocument.manual(filename, null, knowledgeBaseId, operatorId));
+            RagDocumentVersion version = versionRepository.save(RagDocumentVersion.first(document.getId(), filename,
+                    contentType, asset.getContentLength(), asset.getSha256(), asset.getBucket(), asset.getObjectKey(),
+                    asset.getId(), operatorId));
+            document.setCurrentVersion(version.getId());
+            documentRepository.save(document);
+            IngestionJob job = jobRepository.save(IngestionJob.queued(document.getId(), version.getId()));
+            return UploadResult.created(document.getId(), version.getId(), job.getId(), asset.getObjectKey());
+        });
     }
 
     private String safeFilename(String filename) {
@@ -94,19 +86,4 @@ public class DocumentService {
         }
         return value.length() <= 255 ? value : value.substring(value.length() - 255);
     }
-
-    private String objectKey(String filename) {
-        LocalDate date = LocalDate.now();
-        String extension = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
-        return "manual/%d/%02d/%s.%s".formatted(date.getYear(), date.getMonthValue(), UUID.randomUUID(), extension);
-    }
-
-    private String sha256(byte[] bytes) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 不可用", exception);
-        }
-    }
-
 }

@@ -2,6 +2,8 @@ package com.agentto.rag.storage;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,11 +12,14 @@ import org.springframework.stereotype.Service;
 
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
+import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.ListObjectsArgs;
 import io.minio.RemoveObjectArgs;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
+import io.minio.errors.ErrorResponseException;
 
 @Service
 @ConditionalOnProperty(prefix = "rag.storage", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -37,13 +42,20 @@ public class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public StoredObject put(String objectKey, byte[] content, String contentType) {
+        return put(objectKey, new ByteArrayInputStream(content), content.length, contentType, Map.of());
+    }
+
+    @Override
+    public StoredObject put(String objectKey, InputStream content, long contentLength, String contentType,
+            Map<String, String> metadata) {
         try {
             ensureBucket(bucket);
             client.putObject(PutObjectArgs.builder()
                     .bucket(bucket)
                     .object(objectKey)
-                    .stream(new ByteArrayInputStream(content), content.length, -1)
+                    .stream(content, contentLength, -1)
                     .contentType(contentType == null ? "application/octet-stream" : contentType)
+                    .userMetadata(metadata == null ? Map.of() : metadata)
                     .build());
             return new StoredObject(bucket, objectKey);
         } catch (Exception exception) {
@@ -57,6 +69,37 @@ public class MinioObjectStorageService implements ObjectStorageService {
             return client.getObject(GetObjectArgs.builder().bucket(bucket).object(objectKey).build());
         } catch (Exception exception) {
             throw new IllegalStateException("MinIO 文件读取失败", exception);
+        }
+    }
+
+    @Override
+    public StoredObject expectedLocation(String objectKey) {
+        return new StoredObject(bucket, objectKey);
+    }
+
+    @Override
+    public Optional<ObjectStat> stat(String bucket, String objectKey) {
+        try {
+            StatObjectResponse response = client.statObject(
+                    StatObjectArgs.builder().bucket(bucket).object(objectKey).build());
+            return Optional.of(new ObjectStat(bucket, objectKey, response.size(), response.userMetadata()));
+        } catch (ErrorResponseException exception) {
+            String code = exception.errorResponse() == null ? "" : exception.errorResponse().code();
+            if ("NoSuchKey".equals(code) || "NoSuchObject".equals(code) || "NoSuchBucket".equals(code)) {
+                return Optional.empty();
+            }
+            throw new IllegalStateException("MinIO 对象检查失败", exception);
+        } catch (Exception exception) {
+            throw new IllegalStateException("MinIO 对象检查失败", exception);
+        }
+    }
+
+    @Override
+    public void delete(String bucket, String objectKey) {
+        try {
+            client.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(objectKey).build());
+        } catch (Exception exception) {
+            throw new IllegalStateException("MinIO 文件删除失败", exception);
         }
     }
 

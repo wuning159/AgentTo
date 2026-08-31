@@ -25,7 +25,9 @@ class FlywayMigrationTest {
             "rag_ingestion_stage",
             "rag_chunk",
             "rag_query_trace",
-            "rag_query_candidate");
+            "rag_query_candidate",
+            "rag_content_asset",
+            "rag_object_cleanup_task");
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -57,6 +59,15 @@ class FlywayMigrationTest {
         assertColumnExists("RAG_QUERY_CANDIDATE", "CONTENT_HASH");
         assertColumnExists("RAG_QUERY_CANDIDATE", "DEDUPE_STATUS");
         assertColumnExists("RAG_QUERY_CANDIDATE", "DUPLICATE_OF_CHUNK_UID");
+    }
+
+    @Test
+    void createsContentAssetLifecycleSchema() {
+        assertTableExists("RAG_CONTENT_ASSET");
+        assertTableExists("RAG_OBJECT_CLEANUP_TASK");
+        assertColumnExists("RAG_DOCUMENT_VERSION", "CONTENT_ASSET_ID");
+        assertColumnExists("RAG_CONTENT_ASSET", "STORAGE_STATE");
+        assertColumnExists("RAG_CONTENT_ASSET", "UNREFERENCED_SINCE");
     }
 
     private void assertTableExists(String table) {

@@ -92,6 +92,16 @@ rag:
     minimum-score: 0.55
     # 最少合格证据数量
     minimum-count: 2
+  scheduling:
+    enabled: ${RAG_SCHEDULING_ENABLED:true}
+  asset:
+    lifecycle:
+      unreferenced-ttl: 168h
+      pending-lease: 5m
+      cleanup-interval: 1m
+      worker-interval: 1m
+      pending-wait-timeout: 30s
+      pending-wait-poll: 200ms
 
 logging:
   pattern:
