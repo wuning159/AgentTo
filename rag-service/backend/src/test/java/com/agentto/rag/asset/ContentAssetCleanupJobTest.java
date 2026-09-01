@@ -147,6 +147,33 @@ class ContentAssetCleanupJobTest {
     }
 
     @Test
+    void expiredPendingWithoutMetadataRecomputesAndBecomesReadyWhenBytesMatch() {
+        ContentAsset pending = repository.save(ContentAsset.pending(SHA, InMemoryObjectStorage.BUCKET, KEY,
+                BYTES.length, "text/plain", "owner", clock.instant().minus(Duration.ofMinutes(1)), clock.instant()));
+        storage.seedWithoutMetadata(KEY, BYTES);
+
+        job.runOnce();
+
+        assertThat(repository.findById(pending.getId()).orElseThrow().getStorageState())
+                .isEqualTo(ContentAssetState.READY);
+        assertThat(storage.getCount()).isGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    void expiredPendingWithoutMetadataAndWrongBytesStaysPending() {
+        ContentAsset pending = repository.save(ContentAsset.pending(SHA, InMemoryObjectStorage.BUCKET, KEY,
+                BYTES.length, "text/plain", "owner", clock.instant().minus(Duration.ofMinutes(1)), clock.instant()));
+        storage.seedWithoutMetadata(KEY, "not-the-original-bytes".getBytes());
+
+        job.runOnce();
+
+        ContentAsset updated = repository.findById(pending.getId()).orElseThrow();
+        assertThat(updated.getStorageState()).isEqualTo(ContentAssetState.PENDING);
+        assertThat(updated.getLeaseOwner()).isNull();
+        assertThat(storage.size()).isOne();
+    }
+
+    @Test
     void shaMatchOnVersionWithoutAssetIdStillProtects() {
         ContentAsset asset = saveReady();
         jdbcTemplate.update("update rag_content_asset set unreferenced_since = ? where id = ?",

@@ -1,12 +1,19 @@
 package com.agentto.rag.asset;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -15,6 +22,9 @@ import com.agentto.rag.storage.ObjectStorageService;
 
 @Service
 public class ContentAssetCleanupJob {
+
+    private static final Logger log = LoggerFactory.getLogger(ContentAssetCleanupJob.class);
+    private static final int SHA_BUFFER_SIZE = 8192;
 
     private static final String DELETE_FAILED_CODE = "OBJECT_DELETE_FAILED";
 
@@ -132,9 +142,41 @@ public class ContentAssetCleanupJob {
         }
     }
 
+    /**
+     * 元数据缺失时必须流式重算 SHA，不得把「无元数据」当成匹配。
+     * 读取失败或哈希不一致时返回 false：保持 PENDING、释放租约，不删除共享键。
+     */
     private boolean objectMatches(ObjectStat stat, ContentAsset asset) {
         Optional<String> metadataSha = stat.sha256();
-        return metadataSha.isEmpty() || metadataSha.get().equalsIgnoreCase(asset.getSha256());
+        if (metadataSha.isPresent()) {
+            return metadataSha.get().equalsIgnoreCase(asset.getSha256());
+        }
+        try (InputStream in = storage.get(asset.getBucket(), asset.getObjectKey())) {
+            return sha256Hex(in).equalsIgnoreCase(asset.getSha256());
+        } catch (IOException | RuntimeException e) {
+            log.warn("expired pending SHA recompute failed for {}", asset.getId(), e);
+            return false;
+        }
+    }
+
+    private static String sha256Hex(InputStream in) throws IOException {
+        MessageDigest digest = sha256Digest();
+        byte[] buffer = new byte[SHA_BUFFER_SIZE];
+        int read;
+        while ((read = in.read(buffer)) >= 0) {
+            if (read > 0) {
+                digest.update(buffer, 0, read);
+            }
+        }
+        return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private static MessageDigest sha256Digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 不可用", exception);
+        }
     }
 
     private Duration backoff(int attemptCount) {
