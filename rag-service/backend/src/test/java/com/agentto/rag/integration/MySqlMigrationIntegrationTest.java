@@ -15,7 +15,7 @@ import org.testcontainers.containers.MySQLContainer;
 /**
  * MySQL 真实迁移集成测试。
  *
- * <p>使用与生产一致的 mysql:8.4 容器执行 Flyway 全量迁移（V1-V7），
+ * <p>使用与生产一致的 mysql:8.4 容器执行 Flyway 全量迁移（V1-V8），
  * 验证迁移脚本在真实 MySQL 方言下可执行，并生成完整业务表结构。
  * 不加载 Spring 上下文，仅验证迁移层本身。
  */
@@ -39,7 +39,7 @@ class MySqlMigrationIntegrationTest {
                     .load()
                     .migrate();
 
-            assertThat(result.migrationsExecuted).as("V1-V7 全部执行").isEqualTo(7);
+            assertThat(result.migrationsExecuted).as("V1-V8 全部执行").isEqualTo(8);
 
             try (Connection connection = DriverManager.getConnection(
                     mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword())) {
@@ -57,8 +57,11 @@ class MySqlMigrationIntegrationTest {
                 assertTableExists(connection, "rag_knowledge_base_grant");
                 assertTableExists(connection, "rag_client_api_key");
                 assertTableExists(connection, "rag_query_flow_trace");
+                assertTableExists(connection, "rag_content_asset");
+                assertTableExists(connection, "rag_object_cleanup_task");
 
                 assertColumnExists(connection, "rag_document", "knowledge_base_id");
+                assertColumnExists(connection, "rag_document_version", "content_asset_id");
                 assertColumnExists(connection, "rag_chunk", "knowledge_base_id");
                 assertColumnExists(connection, "rag_ingestion_stage", "technical_detail_json");
                 assertColumnExists(connection, "rag_query_trace", "execution_report_json");

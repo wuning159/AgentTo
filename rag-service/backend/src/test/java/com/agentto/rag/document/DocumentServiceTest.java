@@ -3,11 +3,6 @@ package com.agentto.rag.document;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +15,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.agentto.rag.asset.CanonicalObjectKey;
+import com.agentto.rag.asset.ContentAssetRepository;
 import com.agentto.rag.auth.AdminSessionRepository;
 import com.agentto.rag.auth.AdminUser;
 import com.agentto.rag.auth.AdminUserRepository;
@@ -27,8 +24,7 @@ import com.agentto.rag.ingestion.IngestionJobRepository;
 import com.agentto.rag.knowledgebase.KnowledgeBase;
 import com.agentto.rag.knowledgebase.KnowledgeBaseNotWritableException;
 import com.agentto.rag.knowledgebase.KnowledgeBaseRepository;
-import com.agentto.rag.storage.ObjectStorageService;
-import com.agentto.rag.storage.StoredObject;
+import com.agentto.rag.storage.InMemoryObjectStorage;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -48,6 +44,9 @@ class DocumentServiceTest {
     private IngestionJobRepository jobRepository;
 
     @Autowired
+    private ContentAssetRepository contentAssetRepository;
+
+    @Autowired
     private KnowledgeBaseRepository knowledgeBaseRepository;
 
     @Autowired
@@ -60,7 +59,7 @@ class DocumentServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private MemoryStorage storage;
+    private InMemoryObjectStorage storage;
 
     private Long adminId;
     private Long knowledgeBaseId;
@@ -69,6 +68,7 @@ class DocumentServiceTest {
     void setUp() {
         jobRepository.deleteAll();
         versionRepository.deleteAll();
+        contentAssetRepository.deleteAll();
         documentRepository.deleteAll();
         knowledgeBaseRepository.deleteAll();
         sessionRepository.deleteAll();
@@ -92,9 +92,13 @@ class DocumentServiceTest {
         assertThat(result.documentId()).isNotNull();
         assertThat(result.versionId()).isNotNull();
         assertThat(result.jobId()).isNotNull();
+        assertThat(result.objectKey()).isEqualTo(
+                CanonicalObjectKey.of("e76bda917de8995693adb36b33262160e895318a635ca11ac8272b3a630c37b1"));
         assertThat(storage.bytes(result.objectKey())).containsExactly(bytes);
-        assertThat(versionRepository.findById(result.versionId()).orElseThrow().getSha256())
+        RagDocumentVersion version = versionRepository.findById(result.versionId()).orElseThrow();
+        assertThat(version.getSha256())
                 .isEqualTo("e76bda917de8995693adb36b33262160e895318a635ca11ac8272b3a630c37b1");
+        assertThat(version.getContentAssetId()).isNotNull();
         assertThat(jobRepository.findById(result.jobId()).orElseThrow().getStatus()).isEqualTo("QUEUED");
         assertThat(documentRepository.findById(result.documentId()).orElseThrow().getKnowledgeBaseId())
                 .isEqualTo(knowledgeBaseId);
@@ -119,6 +123,7 @@ class DocumentServiceTest {
         assertThat(documentRepository.count()).isOne();
         assertThat(versionRepository.count()).isOne();
         assertThat(jobRepository.count()).isOne();
+        assertThat(contentAssetRepository.count()).isOne();
     }
 
     @Test
@@ -140,13 +145,11 @@ class DocumentServiceTest {
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "content".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-        // 不存在的知识库 ID
         assertThatThrownBy(() -> documentService.upload(file, 999L, adminId))
                 .isInstanceOf(KnowledgeBaseNotWritableException.class)
                 .hasMessageContaining("不存在");
         assertThat(storage.size()).isZero();
 
-        // 禁用状态的知识库
         KnowledgeBase disabled = knowledgeBaseRepository.save(
                 new KnowledgeBase("kb-disabled", "禁用知识库", "PRIVATE", null));
         disabled.setStatus("DISABLED");
@@ -162,41 +165,8 @@ class DocumentServiceTest {
 
         @Bean
         @Primary
-        MemoryStorage memoryStorage() {
-            return new MemoryStorage();
-        }
-    }
-
-    static final class MemoryStorage implements ObjectStorageService {
-
-        private final Map<String, byte[]> objects = new ConcurrentHashMap<>();
-
-        @Override
-        public StoredObject put(String objectKey, byte[] content, String contentType) {
-            objects.put(objectKey, content.clone());
-            return new StoredObject("test-bucket", objectKey);
-        }
-
-        @Override
-        public InputStream get(String bucket, String objectKey) {
-            return new ByteArrayInputStream(objects.get(objectKey));
-        }
-
-        @Override
-        public boolean healthy() {
-            return true;
-        }
-
-        byte[] bytes(String key) {
-            return objects.get(key);
-        }
-
-        int size() {
-            return objects.size();
-        }
-
-        void clear() {
-            objects.clear();
+        InMemoryObjectStorage memoryStorage() {
+            return new InMemoryObjectStorage();
         }
     }
 }

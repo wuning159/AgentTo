@@ -17,6 +17,8 @@ rag:
     key-pepper: test-pepper-for-unit-tests
   async:
     enabled: false
+  scheduling:
+    enabled: false
   storage:
     enabled: false
   elasticsearch:

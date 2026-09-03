@@ -37,6 +37,8 @@ public class TestDataCleanupService {
         jdbcTemplate.update("delete from rag_ingestion_job");
         jdbcTemplate.update("delete from rag_chunk");
         jdbcTemplate.update("delete from rag_document_version");
+        jdbcTemplate.update("delete from rag_object_cleanup_task");
+        jdbcTemplate.update("delete from rag_content_asset");
         jdbcTemplate.update("delete from rag_document");
         return new CleanupResult(documents, versions, chunks, jobs, traces, true, true);
     }

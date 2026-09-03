@@ -17,6 +17,8 @@ rag:
     key-pepper: integration-test-pepper
   async:
     enabled: false
+  scheduling:
+    enabled: false
   storage:
     enabled: false
   elasticsearch:
